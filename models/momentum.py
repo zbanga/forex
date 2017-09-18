@@ -1,98 +1,127 @@
-import pandas as pd  # 6
-import numpy as np  # 11
-import seaborn as sns; sns.set()  # 18
-import configparser  # 1
-import oandapy as opy  # 2
-
-config = configparser.ConfigParser()  # 3
-config.read('oanda.cfg')  # 4
-
-oanda = opy.API(environment='practice',
-                access_token=config['oanda']['access_token'])  # 5
-
-data = oanda.get_history(instrument='EUR_USD',  # our instrument
-                         start='2016-12-08',  # start data
-                         end='2016-12-10',  # end date
-                         granularity='M1')  # minute bars  # 7
-
-df = pd.DataFrame(data['candles']).set_index('time')  # 8
-
-df.index = pd.DatetimeIndex(df.index)  # 9
-
-df.info() # 10
+'''
+https://www.oreilly.com/learning/algorithmic-trading-in-less-than-100-lines-of-python-code
+'''
 
 
-df['returns'] = np.log(df['closeAsk'] / df['closeAsk'].shift(1))  # 12
-
-cols = []  # 13
-
-for momentum in [15, 30, 60, 120]:  # 14
-    col = 'position_%s' % momentum  # 15
-    df[col] = np.sign(df['returns'].rolling(momentum).mean())  # 16
-    cols.append(col)  # 17
+import pandas as pd
+import numpy as np
+import seaborn as sns
+from datetime import datetime
+import matplotlib.pyplot as plt
 
 
+df = pd.read_pickle('../data/EUR_USD_M1')
+df.set_index('time', inplace=True)
 
-strats = ['returns']  # 19
+print(df.info())
 
-for col in cols:  # 20
-    strat = 'strategy_%s' % col.split('_')[1]  # 21
-    df[strat] = df[col].shift(1) * df['returns']  # 22
-    strats.append(strat)  # 23
+df = df.loc[datetime(2016, 12, 8):datetime(2016, 12, 10), :]
 
-df[strats].dropna().cumsum().apply(np.exp).plot()  # 24
+df['log_returns'] = np.log(df['close'] / df['close'].shift(1))
+df['ari_returns'] = (df['close'] / df['close'].shift(1)) - 1 # or df['close'].pct_change()
 
-class MomentumTrader(opy.Streamer):  # 25
-    def __init__(self, momentum, *args, **kwargs):  # 26
-        opy.Streamer.__init__(self, *args, **kwargs)  # 27
-        self.ticks = 0  # 28
-        self.position = 0  # 29
-        self.df = pd.DataFrame()  # 30
-        self.momentum = momentum  # 31
-        self.units = 100000  # 32
-    def create_order(self, side, units):  # 33
+return_types = ['log_returns', 'ari_returns']
+fig, axes = plt.subplots(len(return_types), 1)
+for i, ax in enumerate(axes.reshape(-1)):
+    df[return_types[i]].hist(bins=50, ax=ax)
+    ax.set_title(return_types[i])
+plt.show()
+
+cols = []
+for momentum in [15, 30, 60, 120]:
+    col = 'position_{}'.format(momentum)
+    df[col] = np.sign(df['log_returns'].rolling(momentum).mean()) #the sign of the average returns of the last x candles
+    cols.append(col)
+
+
+strats = ['log_returns']
+
+for col in cols:
+    strat = 'strategy_{}'.format(col.split('_')[1])
+    df[strat] = df[col].shift(1) * df['log_returns'] #shift last sign one and multiply by return
+    strats.append(strat)
+
+fig, axes = plt.subplots(len(strats), 1)
+for i, ax in enumerate(axes.reshape(-1)):
+    df[strats[i]].hist(bins=50, ax=ax)
+    ax.set_title(strats[i])
+plt.show()
+
+
+df[strats].dropna().cumsum().apply(np.exp).plot() #you can add log returns and then transpose back with np.exp
+plt.show()
+
+'''
+example
+                      returns  position_15  strategy_15
+time                                                   
+2016-12-08 00:00:00       NaN          NaN          NaN
+2016-12-08 00:01:00  0.000065          NaN          NaN
+2016-12-08 00:02:00  0.000093          NaN          NaN
+2016-12-08 00:03:00  0.000242          NaN          NaN
+2016-12-08 00:04:00 -0.000019          NaN          NaN
+2016-12-08 00:05:00  0.000214          NaN          NaN
+2016-12-08 00:06:00 -0.000037          NaN          NaN
+2016-12-08 00:07:00  0.000028          NaN          NaN
+2016-12-08 00:08:00  0.000019          NaN          NaN
+2016-12-08 00:09:00 -0.000009          NaN          NaN
+2016-12-08 00:10:00  0.000214          NaN          NaN
+2016-12-08 00:11:00  0.000084          NaN          NaN
+2016-12-08 00:12:00 -0.000418          NaN          NaN
+2016-12-08 00:13:00 -0.000056          NaN          NaN
+2016-12-08 00:14:00 -0.000149          NaN          NaN
+2016-12-08 00:17:00  0.000223          1.0          NaN
+2016-12-08 00:18:00 -0.000037          1.0    -0.000037 pos: long
+2016-12-08 00:19:00  0.000037          1.0     0.000037 pos: long
+2016-12-08 00:20:00 -0.000028          1.0    -0.000028 pos: long
+2016-12-08 00:21:00 -0.000009          1.0    -0.000009 pos: long
+2016-12-08 00:23:00  0.000019         -1.0     0.000019 pos: long
+2016-12-08 00:24:00  0.000037         -1.0    -0.000037 pos: short
+2016-12-08 00:25:00 -0.000028         -1.0     0.000028
+2016-12-08 00:26:00 -0.000139         -1.0     0.000139
+'''
+
+#Old Oanda API
+
+class MomentumTrader(object):
+    def __init__(self, momentum, *args, **kwargs):
+        opy.Streamer.__init__(self, *args, **kwargs)
+        self.ticks = 0
+        self.position = 0
+        self.df = pd.DataFrame()
+        self.momentum = momentum
+        self.units = 100000
+    def create_order(self, side, units):
         order = oanda.create_order(config['oanda']['account_id'],
             instrument='EUR_USD', units=units, side=side,
-            type='market')  # 34
-        print('\n', order)  # 35
-    def on_success(self, data):  # 36
+            type='market')
+        print('\n', order)
+    def on_success(self, data):
         self.ticks += 1  # 37
-        # print(self.ticks, end=', ')
-        # appends the new tick data to the DataFrame object
-        self.df = self.df.append(pd.DataFrame(data['tick'],
-                                 index=[data['tick']['time']]))  # 38
-        # transforms the time information to a DatetimeIndex object
-        self.df.index = pd.DatetimeIndex(self.df['time'])  # 39
-        # resamples the data set to a new, homogeneous interval
-        dfr = self.df.resample('5s').last()  # 40
-        # calculates the log returns
-        dfr['returns'] = np.log(dfr['ask'] / dfr['ask'].shift(1))  # 41
-        # derives the positioning according to the momentum strategy
-        dfr['position'] = np.sign(dfr['returns'].rolling(
-                                      self.momentum).mean())  # 42
-        if dfr['position'].ix[-1] == 1:  # 43
-            # go long
-            if self.position == 0:  # 44
-                self.create_order('buy', self.units)  # 45
-            elif self.position == -1:  # 46
-                self.create_order('buy', self.units * 2)  # 47
-            self.position = 1  # 48
-        elif dfr['position'].ix[-1] == -1:  # 49
-            # go short
-            if self.position == 0:  # 50
-                self.create_order('sell', self.units)  # 51
-            elif self.position == 1: # 52
-                self.create_order('sell', self.units * 2)  # 53
-            self.position = -1  # 54
-        if self.ticks == 250:  # 55
-            # close out the position
-            if self.position == 1:  # 56
-                self.create_order('sell', self.units)  # 57
-            elif self.position == -1:  # 58
-                self.create_order('buy', self.units)  # 59
-            self.disconnect()  # 60
+        self.df = self.df.append(pd.DataFrame(data['tick'], index=[data['tick']['time']]))
+        self.df.index = pd.DatetimeIndex(self.df['time'])
+        dfr = self.df.resample('5s').last()
+        dfr['returns'] = np.log(dfr['ask'] / dfr['ask'].shift(1))
+        dfr['position'] = np.sign(dfr['returns'].rolling(self.momentum).mean())
+        if dfr['position'].ix[-1] == 1:  #long
+            if self.position == 0: #if no position, buy normal units
+                self.create_order('buy', self.units)
+            elif self.position == -1: #if currently short, long twice the units
+                self.create_order('buy', self.units * 2)
+            self.position = 1
+        elif dfr['position'].ix[-1] == -1: #short
+            if self.position == 0:
+                self.create_order('sell', self.units)  #if no position, sell normal units
+            elif self.position == 1:
+                self.create_order('sell', self.units * 2)  #if currently long, short twice the units
+            self.position = -1
+        if self.ticks == 250:
+            if self.position == 1:
+                self.create_order('sell', self.units)
+            elif self.position == -1:
+                self.create_order('buy', self.units)
+            self.disconnect()
 
-mt = MomentumTrader(momentum=12, environment='practice',
-                    access_token=config['oanda']['access_token'])
-mt.rates(account_id=config['oanda']['account_id'],
-         instruments=['DE30_EUR'], ignore_heartbeat=True)
+#mt = MomentumTrader(momentum=12, environment='practice', access_token=config['oanda']['access_token'])
+#mt.rates(account_id=config['oanda']['account_id'], instruments=['DE30_EUR'], ignore_heartbeat=True)
+

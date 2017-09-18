@@ -13,12 +13,10 @@ import matplotlib.pyplot as plt
 import sys
 
 
-file_name = 'EUR_USD_M1'
-df = pd.read_pickle('../data/'+file_name)
+file_name = sys.argv[1]
+df = pd.read_pickle('data/'+file_name)
 df.sort_values('time', inplace=True)
-df.set_index('time', inplace=True)
-df = df.loc[datetime(2015, 1, 1):, :]
 fig, ax = plt.subplots()
-ax.plot(df.close)
+ax.plot(df.time, df.close)
 ax.set_title(file_name)
 plt.show()
