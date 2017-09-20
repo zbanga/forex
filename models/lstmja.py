@@ -95,7 +95,15 @@ def build_model(layers):
 
 def predict_point_by_point(model, data):
     '''
-    Predict each timestep given the last sequence of true data, in effect only predicting 1 step ahead each time
+    Input:
+        model: keras net
+        data: x_test
+    Output:
+        predicted:
+    -----------------
+    for each window of 50 previous true data to only the next timestep
+    predicted shape (412,)
+    -----------------
     '''
     predicted = model.predict(data)
     predicted = np.reshape(predicted, (predicted.size,))
@@ -103,27 +111,71 @@ def predict_point_by_point(model, data):
 
 def predict_sequence_full(model, data, window_size):
     '''
-    Shift the window by 1 new prediction each time, re-run predictions on new window with additional prediction
+    Input:
+        model: keras net
+        data: x_test
+        window_size: 50
+    Output:
+        predicted: 
+    ------------------
+    for each window predict the next price
+    shift the window 1 and add the price to the end
+    predict on new window
+    ------------------
     '''
-    curr_frame = data[0]
-    predicted = []
+    curr_frame = data[0] # (50,1)
+    predicted = [] #(len x_test)
     for i in range(len(data)):
-        predicted.append(model.predict(curr_frame[newaxis,:,:])[0,0])
-        curr_frame = curr_frame[1:]
-        curr_frame = np.insert(curr_frame, [window_size-1], predicted[-1], axis=0)
+        pred_data = curr_frame[newaxis,:,:] #(1,50,1)
+        prediction = model.predict(pred_data) #(1,1)
+        predicted.append(prediction[0,0])
+        curr_frame = curr_frame[1:] #(49,1)
+        curr_frame = np.insert(curr_frame, [window_size-1], predicted[-1], axis=0) #insert prediction on end (50,1)
     return predicted
 
 def predict_sequences_multiple(model, data, window_size, prediction_len):
     '''
+    Input:
+        model: keras net
+        data: x_test
+        window_size: 50
+        prediction_len: 50
+    Output:
+        predicted: 
     Predict sequence of 50 steps before shifting prediction run forward by 50 steps
+    for 412/50 = 8 individual predictions
+    predict next 50 timesteps adjusting and using predictions to predict with
+    
+    
     '''
     prediction_seqs = []
     for i in range(int(len(data)/prediction_len)):
         curr_frame = data[i*prediction_len]
         predicted = []
         for j in range(prediction_len):
-            predicted.append(model.predict(curr_frame[newaxis,:,:])[0,0])
+            pred_data = curr_frame[newaxis,:,:]
+            prediction = model.predict(pred_data)
+            predicted.append(prediction[0,0])
             curr_frame = curr_frame[1:]
             curr_frame = np.insert(curr_frame, [window_size-1], predicted[-1], axis=0)
         prediction_seqs.append(predicted)
     return prediction_seqs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    pass

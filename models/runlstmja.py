@@ -7,7 +7,7 @@ watch -n 1 nvidia-smi
 '''
 
 
-import lstm
+import lstmja
 import time
 import matplotlib.pyplot as plt
 import numpy as np
@@ -24,7 +24,7 @@ def plot_results(predicted_data, true_data, figtitle):
     plt.title(figtitle)
     plt.show()
 
-def plot_results_multiple(predicted_data, true_data, prediction_len):
+def plot_results_multiple(predicted_data, true_data, prediction_len, figtitle):
     '''
     use when predicting multiple analyses windows in data
     '''
@@ -37,6 +37,7 @@ def plot_results_multiple(predicted_data, true_data, prediction_len):
             padding = [None for p in range(i * prediction_len)]
             plt.plot(padding + data, label='Prediction')
             plt.legend()
+    plt.title(figtitle)
     plt.show()
 
 #Main Run Thread
@@ -48,13 +49,12 @@ if __name__=='__main__':
     print('> Loading data... ')
 
     # choose either the sine wave data or stock data
-    #x_train, y_train, x_test, y_test = lstm.load_data('../data/sinwave.csv', seq_len, False) # data is sine wave
-    x_train, y_train, x_test, y_test = lstm.load_data('../data/sp500.csv', seq_len, True) # data is a stock, normalize data is True
-    #X_train, y_train, X_test, y_test = pd.read
+    #x_train, y_train, x_test, y_test = lstmja.load_data('../data/sinwave.csv', seq_len, False) # data is sine wave
+    x_train, y_train, x_test, y_test = lstmja.load_data('../data/sp500.csv', seq_len, True) # data is a stock, normalize data is True
     
     print('> Data Loaded. Compiling...')
 
-    model = lstm.build_model([1, seq_len, 100, 1]) # 1 input layer, layer 1 has seq_len neurons, layer 2 has 100 neurons, 1 output
+    model = lstmja.build_model([1, seq_len, 100, 1]) # 1 input layer, layer 1 has seq_len neurons, layer 2 has 100 neurons, 1 output
 
     model.fit(
         x_train,
@@ -66,13 +66,29 @@ if __name__=='__main__':
     print('> Completed.')
     print('Training duration (s) : ', time.time() - global_start_time)
     
-    # comment out either sine wave prediction code or stock prediction code
-    # sine wave code 
-    predicted = lstm.predict_point_by_point(model, x_test)
-    plot_results(predicted, y_test, 'Sine wave - predict one point ahead') 
-    predicted_full = lstm.predict_sequence_full(model, x_test, seq_len)
-    plot_results(predicted_full, y_test, 'Sine wave - predict full sequence from start seed') 
+    predict_point_by_point = lstmja.predict_point_by_point(model, x_test)
+    plot_results(predict_point_by_point, y_test, '50 Actual and Predict 1 Next Price') #Always use 50 Act to Predict 1 Next
+    predict_full = lstmja.predict_sequence_full(model, x_test, seq_len)
+    plot_results(predict_full, y_test, '50 Actual and Predict All Next Prices') #Use 50 first and predict all next using predictions to predict on
+    predict_sequences = lstmja.predict_sequences_multiple(model, x_test, seq_len, seq_len) #predict 
+    plot_results_multiple(predict_sequences, y_test, seq_len, '50 Actual and Predict 50 Next Prices') # prediction, true data, prediction length)
     
-    # stock prediction code 
-    #predictions = lstm.predict_sequences_multiple(model, X_test, seq_len, seq_len) #model, data, window_size, prediction length)
-    #plot_results_multiple(predictions, y_test, seq_len) # prediction, true data, prediction length)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pass

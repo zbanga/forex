@@ -42,3 +42,33 @@ plt.style.use('ggplot')
 
 
     
+
+df = pd.read_pickle('../data/EUR_USD_M1')
+df.set_index('time', inplace=True)
+df = df[['open']]
+df = df.loc[datetime(2016, 12, 8):datetime(2016, 12, 10), :]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    pass
