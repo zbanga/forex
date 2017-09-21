@@ -21,6 +21,7 @@ forex
   * technical indicators
     * TA-Lib https://github.com/mrjbq7/ta-lib
     * http://www.ta-lib.org/hdr_dw.html
+    * https://mrjbq7.github.io/ta-lib/index.html
 * models
   * classification vs. regression?
   * classic momentum and such
