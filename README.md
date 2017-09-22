@@ -30,6 +30,7 @@ forex
   * machine learning
     * https://arxiv.org/pdf/1605.00003.pdf
     * http://wseas.us/e-library/conferences/2011/Penang/ACRE/ACRE-05.pdf
+    * http://francescopochetti.com/stock-market-prediction-part-introduction/
   * neural nets (rnn / lstm)
     * https://github.com/GalvanizeOpenSource/Recurrent_Neural_Net_Meetup
     * http://www.jakob-aungiers.com/articles/a/LSTM-Neural-Network-for-Time-Series-Prediction
