@@ -58,6 +58,7 @@ def get_data():
     
             params = {'price': 'M', 'granularity': gran, 'count': 5000,
                       'from': last_timestamp,
+                      'includeFirst': False,
                       'alignmentTimezone': 'America/New_York'}
             r = instruments.InstrumentsCandles(instrument=instru,params=params)
             client.request(r)
@@ -74,7 +75,6 @@ def get_data():
             if last_month == '2017-09':
                 hit_today = True
     
-        df.drop_duplicates('time', keep='first', inplace=True)
         save_name = instru+'_'+gran
         print(save_name, df.shape)
         df.to_pickle('data/'+save_name)
@@ -94,11 +94,7 @@ def clean_data(file_path_name):
 
 if __name__ == '__main__':
     
-    all_files = glob.glob('../data/*')
-    all_files.sort(key=os.path.getmtime)
-    for i, file in enumerate(all_files):
-        clean_data('../data/'+file)
-        print(i)
+    
     
     pass
     

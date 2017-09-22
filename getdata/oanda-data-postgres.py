@@ -19,48 +19,6 @@ link pointing it to the correct postgres server. Enter this command:
 sudo ln -s /var/run/postgresql/.s.PGSQL.5432 /tmp/.s.PGSQL.5432
 Now, when using the psycopg2.connect() function in python, you only need to
 specify the database keyword, and not user or host
-
-setup db
-$
-sudo adduser evdbuser
-sudo -u postgres psql template1
-
-psql>
-CREATE DATABASE eventsdb;
-CREATE USER evdbuser WITH PASSWORD 'p2FX68';
-GRANT ALL PRIVILEGES ON DATABASE eventsdb TO evdbuser;
-
-$
-psql -d eventsdb -U evdbuser -h localhost
-
-drop table events;
-CREATE TABLE events(
-    eventid             SERIAL PRIMARY KEY NOT NULL,
-    prediction          VARCHAR(20),
-    pred_prob           INT,
-    disposition         VARCHAR(20),
-    approx_payout_date  TIMESTAMP    NOT NULL,
-    body_length         INT          NOT NULL,
-    channels            INT          NOT NULL,
-    country             VARCHAR(2)   NOT NULL,
-    currency            VARCHAR(3)   NOT NULL,
-    delivery_method     REAL         NOT NULL,
-    description         VARCHAR(500) NOT NULL,
-    email_domain        VARCHAR(50)  NOT NULL,
-    event_created       TIMESTAMP    NOT NULL,
-    event_end           TIMESTAMP    NOT NULL,
-    event_published     TIMESTAMP    NOT NULL,
-    event_start         TIMESTAMP    NOT NULL,
-    fb_published        INT          NOT NULL,
-    gts                 REAL         NOT NULL,
-    has_analytics       BOOLEAN      NOT NULL,
-    has_header          VARCHAR(100) NOT NULL,
-    has_logo            BOOLEAN      NOT NULL,
-
-
-data_layer: https://github.com/sfischbuch/dsi-fraud-detection-case-study/blob/master/eventdb.py
-
-data_pump: https://github.com/sfischbuch/dsi-fraud-detection-case-study/blob/master/event_run.py
 '''
 
 def create_db():
@@ -148,12 +106,38 @@ def get_data(instru):
                 hit_today = True
             
             pass
+
+
+def return_data_db(table_name):
+    conn = pg2.connect(dbname='forex')
+    conn.autocommit = True
+    cur = conn.cursor()
+    query = 'SELECT * FROM {};'.format(table_name)
+    cur.execute(query)
+    data = cur.fetchall()
+    cur.close()
+    conn.close()
+    return data
+
+def clean_data(file_path_name):
+    columns=['time', 'volume', 'close', 'high', 'low', 'open', 'complete']
+    df = pd.DataFrame(data, columns=columns)
+    df['time'] = pd.to_datetime(df['time'], utc=True)
+    df['volume'] = df.volume.astype(int)
+    df['close'] = df.close.astype(float)
+    df['high'] = df.high.astype(float)
+    df['low'] = df.low.astype(float)
+    df['open'] = df.open.astype(float)
+    df['complete'] = df.complete.astype(bool)
+    return df
+    
         
 
 
 if __name__ == '__main__':
     
-    get_data('EUR_USD')
+    data = return_data_db('eur_usd_d')
+    df = clean_data(df)
     
     
     
