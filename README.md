@@ -35,6 +35,8 @@ forex
     * https://github.com/GalvanizeOpenSource/Recurrent_Neural_Net_Meetup
     * http://www.jakob-aungiers.com/articles/a/LSTM-Neural-Network-for-Time-Series-Prediction
     * http://www.jakob-aungiers.com/articles/a/Multidimensional-LSTM-Networks-to-Predict-Bitcoin-Price
+    * https://machinelearningmastery.com/time-series-forecasting-long-short-term-memory-network-python/
+    * https://www.otexts.org/fpp
   * probablistic programming
     * https://www.youtube.com/watch?v=coEVZNg_nlA
   * ARIMA
