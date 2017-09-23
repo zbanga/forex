@@ -19,6 +19,7 @@ from sklearn.svm import SVC
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+from keras.utils.np_utils import to_categorical
 from keras.utils import np_utils
 from keras.models import Sequential
 from keras.layers.core import Dense
@@ -90,18 +91,18 @@ def get_pipelines():
     pipe1 = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', LogisticRegression())])
     pipe2 = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', SVC())])
     pipe3 = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', DecisionTreeClassifier())])
-    pipe4 = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', RandomForestClassifier())])
+    pipe4 = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', RandomForestClassifier(n_jobs=-1))])
     pipe5 = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', AdaBoostClassifier())])
     pipe6 = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', GradientBoostingClassifier())])
     pipes = [pipe1, pipe2, pipe3, pipe4, pipe5, pipe6]
     return pipes
 
-def cross_val():
+def pipe_cross_val():
     ts = TimeSeriesSplit(n_splits=3)
     scores = {}
     for pipe in pipes:
         pipe_name = pipe.steps[2][1].__class__.__name__
-        print('training '.format(pipe_name))
+        print('training {}'.format(pipe_name))
         scores[pipe_name] = []
         for train_index, test_index in ts.split(x):
             x_train, x_test = x.iloc[train_index], x.iloc[test_index]
@@ -109,7 +110,138 @@ def cross_val():
             pipe.fit(x_train, y_train)
             scores[pipe_name].append(pipe.score(x_test, y_test))
     return scores
-        
+
+def get_nn():
+    model = Sequential()
+    num_neurons_in_layer = 50
+    num_inputs = 5 #x_train.shape[1]
+    num_classes = 2 #y_train_binary.shape[1]
+    model.add(Dense(input_dim=num_inputs, 
+                     output_dim=num_neurons_in_layer, 
+                     init='uniform', 
+                     activation='tanh')) 
+    model.add(Dense(input_dim=num_neurons_in_layer, 
+                     output_dim=num_neurons_in_layer, 
+                     init='uniform', 
+                     activation='tanh'))
+    model.add(Dense(input_dim=num_neurons_in_layer, 
+                     output_dim=num_neurons_in_layer, 
+                     init='uniform', 
+                     activation='sigmoid'))
+    model.add(Dense(input_dim=num_neurons_in_layer, 
+                     output_dim=num_classes,
+                     init='uniform', 
+                     activation='softmax')) 
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=["accuracy"] ) # (keep)
+    return model
+    
+
+def nn_cross_val():
+    ts = TimeSeriesSplit(n_splits=3)
+    scores = {}
+    pipe_name = 'mlp nn'
+    print('training {}'.format(pipe_name))
+    scores[pipe_name] = []
+    for train_index, test_index in ts.split(x):
+        x_train, x_test = x.iloc[train_index], x.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        ss = StandardScaler()
+        pca = PCA(n_components=5)
+        x_train = ss.fit_transform(x_train)
+        x_train = pca.fit_transform(x_train)
+        x_test = ss.transform(x_test)
+        x_test = pca.transform(x_test)
+        y_train_binary = to_categorical(y_train)
+        #y_test_binary = to_categorical(y_test)
+        model.fit(x_train, y_train_binary, epochs=100, batch_size=500, verbose=1,validation_split=0.1)
+        #y_train_pred_nn = model.predict_classes(x_train, verbose=1)
+        y_test_pred_nn = model.predict_classes(x_test, verbose=1)
+        #y_test_pred_proba_nn = model.predict_proba(x_test)
+        test_acc = np.sum(y_test == y_test_pred_nn, axis=0) / x_test.shape[0]
+        scores[pipe_name].append(test_acc)
+    return scores
+    
+    
+    
+def xg_cross_val():
+    ts = TimeSeriesSplit(n_splits=3)
+    scores = {}
+    pipe_name = 'xgboost'
+    print('training {}'.format(pipe_name))
+    scores[pipe_name] = []
+    for train_index, test_index in ts.split(x):
+        x_train, x_test = x.iloc[train_index], x.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        ss = StandardScaler()
+        pca = PCA(n_components=5)
+        x_train = ss.fit_transform(x_train)
+        x_train = pca.fit_transform(x_train)
+        x_test = ss.transform(x_test)
+        x_test = pca.transform(x_test)
+        d_train = xgb.DMatrix(x_train, label=y_train)
+        d_test = xgb.DMatrix(x_test, label=y_test)
+        xgb_params = {
+        'objective': 'binary:logistic',
+        'silent': 1,
+        'eval_metric': 'error',
+        'max_depth': 3
+        }
+        watchlist = [(d_train, 'train'), (d_test, 'test')]
+        clf = xgb.train(xgb_params, d_train, 10000, watchlist, early_stopping_rounds=1000, verbose_eval=10)
+        xg_predict = clf.predict(d_test)
+        test_acc = np.sum(y_test == (xg_predict>=.5)*1) / len(y_test)
+        scores[pipe_name].append(test_acc)
+    return scores
+
+def store_predictions():
+    
+    
+    pass
+
+
+def print_predictions_stats():
+    
+    
+    
+    
+    pass
+
+
+
+def plot_prediction_roc():
+    
+    
+    
+    
+    
+    pass
+
+def calc_prediction_returns():
+    
+    
+    
+    
+    pass
+
+
+def quick_plot_prediction_returns():
+    
+    
+    
+    
+    
+    pass
+
+
+def quick_pca_2_plot():
+    pca = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5))])
+    x_new = pca.fit_transform(x)
+    fig, ax = plt.subplots()
+    x_new_one = x_new[y==1]
+    x_new_zero = x_new[y==0]
+    ax.scatter(x_new_one[:,0], x_new_one[:,1], c='green', label='up', alpha=.1)
+    ax.scatter(x_new_zero[:,0], x_new_zero[:,1], c='orange', label='down', alpha=.1)
+    plt.legend(loc='best')
             
 def quick_line_plot(price_series, figtitle):
     fig, ax = plt.subplots(figsize=(25,10))
@@ -118,6 +250,18 @@ def quick_line_plot(price_series, figtitle):
     
 def quick_plot_feature(feature_names, date_start, date_end):
     df.loc[date_start:date_end].plot(y=feature_names, figsize=(25,10))
+    
+def quick_plot_pca():
+    ss = StandardScaler()
+    x_ss = ss.fit_transform(x)
+    pca = PCA()
+    pca.fit(x_ss)
+    plt.figure(1)
+    plt.clf()
+    plt.axes([.2, .2, .7, .7])
+    plt.plot(pca.explained_variance_)
+    plt.xlabel('n_components')
+    plt.ylabel('explained_variance_')
     
     
 
@@ -129,23 +273,29 @@ if __name__ == '__main__':
     add_features()
     print('added features')
     x, y = split_data_x_y()
-    print('split data')
-    pipes = get_pipelines()
-    print('got pipes')
-    scores = cross_val()
-    print('completed cross val')
-    print(scores)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    quick_pca_2_plot()
+    plt.show()
+# =============================================================================
+#     quick_plot_pca()
+#     plt.show()
+# =============================================================================
+# =============================================================================
+#     print('split data')
+#     pipes = get_pipelines()
+#     print('got pipes')
+#     scores = cross_val()
+# =============================================================================
+# =============================================================================
+#     print('get nn')
+#     model = get_nn()
+#     scores = nn_cross_val()
+# =============================================================================
+# =============================================================================
+#     print('get xg')
+#     xg_cross_val()
+#     print('completed cross val')
+#     print(scores)
+# =============================================================================
     
     
     
