@@ -22,6 +22,7 @@ forex
     * TA-Lib https://github.com/mrjbq7/ta-lib
     * http://www.ta-lib.org/hdr_dw.html
     * https://mrjbq7.github.io/ta-lib/index.html
+    * https://github.com/mobone/ta-machine/blob/master/indicators/sqz.py
 * models
   * classification vs. regression?
   * classic momentum and such
