@@ -130,7 +130,7 @@ def get_pipelines():
     svl = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', SVC(kernel="linear", C=0.025))])
     svc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', SVC(gamma=2, C=1))])
     knc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', KNeighborsClassifier(3))])
-    gpc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True))])
+    #gpc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True))])
     gnb = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', GaussianNB())])
     qda = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', QuadraticDiscriminantAnalysis())])
     pipes = {
@@ -145,7 +145,7 @@ def get_pipelines():
             'svl': svl,
             'svc': svc,
             'knc': knc,
-            'gpc': gpc,
+            #'gpc': gpc,
             'gnb': gnb,
             'qda': qda
             }
@@ -176,7 +176,7 @@ def store_predictions():
     pass
 
 
-def print_predictions_stats():
+def print_predictions_stats(y_true, y_pred):
     
     
     
