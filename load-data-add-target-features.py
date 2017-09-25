@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 import pandas as pd
 import numpy as np
@@ -35,7 +34,8 @@ import theano
 import xgboost as xgb
 from xgboost import XGBClassifier
 import gc
-
+import operator
+plt.style.use('ggplot')
 
 def get_data(file_name, date_start, date_end):
     df = pd.read_pickle('data/'+file_name)
@@ -93,7 +93,16 @@ def split_data_x_y():
     y = df['target_label_direction_shifted']
     x = df[predict_columns]
     return x, y
-
+# =============================================================================
+# def get_momentum():
+#     mom_cols = []
+#     for mom_time in [1, 15, 30, 60, 120]:
+#         col = 'average_log_return_{}_sign'.format(mom_time)
+#         df[col] = df['log_returns'].rolling(mom_time).mean().apply(up_down) #the sign of the average returns of the last x candles
+#         mom_cols.append(col)
+#     return mom_cols
+# =============================================================================
+       
 def get_nn():
     model = Sequential()
     num_neurons_in_layer = 50
@@ -126,7 +135,7 @@ def get_pipelines():
     gbc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', GradientBoostingClassifier())])
     nnm = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', KerasClassifier(build_fn=get_nn, epochs=100, batch_size=500, verbose=1))])
     xgb = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', XGBClassifier())])
-    mlp = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', MLPClassifier(alpha=1))])
+    mlp = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', MLPClassifier((100,3)))])
     svl = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', SVC(kernel="linear", C=0.025))])
     svc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', SVC(gamma=2, C=1))])
     knc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', KNeighborsClassifier(3))])
@@ -135,83 +144,97 @@ def get_pipelines():
     qda = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', QuadraticDiscriminantAnalysis())])
     pipes = {
             'lr': lr,
-            'dtc': dtc,
-            'rfc': rfc,
-            'abc': abc,
+# =============================================================================
+#             'dtc': dtc,
+#             'rfc': rfc,
+#             'abc': abc,
+# =============================================================================
             'gbc': gbc,
+# =============================================================================
             'nnm': nnm,
             'xgb': xgb,
-            'mlp': mlp,
-            'svl': svl,
-            'svc': svc,
-            'knc': knc,
-            #'gpc': gpc,
-            'gnb': gnb,
-            'qda': qda
+# =============================================================================
+            'mlp': mlp
+# =============================================================================
+#             'svl': svl,
+#             'svc': svc,
+#             'knc': knc,
+#             #'gpc': gpc,
+#             'gnb': gnb,
+#             'qda': qda
+# =============================================================================
             }
     return pipes
 
 def pipe_cross_val():
     ts = TimeSeriesSplit(n_splits=3)
-    scores = {}
-    for key, pipe in pipes.items():
-        print('training {}'.format(key))
-        scores[key] = []
-        for train_index, test_index in ts.split(x):
-            x_train, x_test = x.iloc[train_index], x.iloc[test_index]
-            y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-            #if key == 'nnm':
-            #   y_train = to_categorical(y_train)
+    prediction_df = pd.DataFrame([])
+    for split_index, (train_index, test_index) in enumerate(ts.split(x)):
+        print('split index: {}'.format(split_index))
+        x_train, x_test = x.iloc[train_index], x.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
+        prediction_df['y_test_{}'.format(str(split_index))] = y_test.values
+        prediction_df['log_returns_{}'.format(str(split_index))] = df['log_returns'][test_index].values        
+        for key, pipe in pipes.items():
+            print('training {}'.format(key))
             pipe.fit(x_train, y_train)
             y_pred = pipe.predict(x_test)
-            accu = accuracy_score(y_test, y_pred)
-            scores[key].append(accu)
-    return scores
-
-
-
-def store_predictions():
-    
-    
-    pass
-
-
-def print_predictions_stats(y_true, y_pred):
-    
-    
-    
-    
-    pass
-
-
-
-def plot_prediction_roc():
-    
-    
-    
-    
-    
-    pass
+            y_pred_proba = pipe.predict_proba(x_test)
+            prediction_df['{}_{}_pred'.format(key, str(split_index))] = y_pred
+            prediction_df['{}_{}_pred_proba'.format(key, str(split_index))] = y_pred_proba[:,1]
+    return prediction_df
 
 def calc_prediction_returns():
-    
-    
-    
-    
-    pass
+    prediction_cols = [col for col in prediction_df.columns if col[-4:] == 'pred']
+    for pred_col in prediction_cols:
+        sp_ind = re.search('_\d_', pred_col).group(0)[1]
+        prediction_df[pred_col] = prediction_df[pred_col].map({1:1, 0:-1}).shift(1)
+        prediction_df[pred_col+'_returns'] = prediction_df[pred_col] * prediction_df['log_returns_{}'.format(sp_ind)]
+        print('{} {:.2f}%'.format(pred_col+'_returns', (np.exp(np.sum(prediction_df[pred_col+'_returns']))-1)*100))
 
+def print_predictions_stats(mod_name, y_true, y_pred):
+    print('\n', mod_name)
+    up = sum(y_true==1) / len(y_true) *100
+    print('up: {:.2f}%'.format(up))
+    print('down: {:.2f}%'.format(1-up))
+    print('accuracy: {:.2f}%'.format(accuracy_score(y_true, y_pred)*100))
+    y_true = pd.Series(y_true, name='Actual')
+    y_pred = pd.Series(y_pred, name='Predicted')
+    print('classification report: ')
+    print(classification_report(y_true, y_pred))
+    print('confusion matrix: ')
+    print(pd.crosstab(y_true, y_pred))
 
-def quick_plot_prediction_returns():
-    
-    
-    
-    
-    
-    pass
+def compare_scalers_plot():
+    close_prices = df['close'].values.reshape(-1,1)
+    sc, mm, ma, rs = StandardScaler(), MinMaxScaler(), MaxAbsScaler(), RobustScaler()
+    scalers = [sc, mm, ma, rs]
+    fig, axes = plt.subplots(len(scalers)+1, 1, figsize=(10,40))
+    for i, ax in enumerate(axes.reshape(-1)):
+        if i == 0:
+            ax.hist(close_prices, bins=100)
+            ax.set_title('No Scaling')
+        else:
+            scale = scalers[i-1]
+            close_prices_scaled = scale.fit_transform(close_prices)
+            ax.hist(close_prices_scaled, bins=100)
+            ax.set_title(scale.__class__.__name__)
+            print('{} min: {:.2f} max: {:.2f}'.format(scale.__class__.__name__, close_prices_scaled.min(), close_prices_scaled.max()))
 
-
-def quick_pca_2_plot():
-    pca = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5))])
+def plot_prediction_roc(mod_name, y_true, y_pred_proba):
+    fpr, tpr, thresholds = roc_curve(y_true, y_pred_proba)
+    roc_auc = auc(fpr, tpr) * 100
+    plt.plot(fpr, tpr, lw=1, label='{} auc: {:.2f}'.format(mod_name, roc_auc))
+    plt.plot([0, 1], [0, 1], 'k--', lw=1)
+    plt.legend(loc='best')
+    
+def plot_prediction_returns(pred_returns):
+    cum_returns = pred_returns.cumsum().apply(np.exp)-1 #you can add log returns and then transpose back with np.exp
+    plt.plot(cum_returns)
+    plt.legend(loc='best')
+    
+def plot_pca_2():
+    pca = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=2))])
     x_new = pca.fit_transform(x)
     fig, ax = plt.subplots()
     x_new_one = x_new[y==1]
@@ -220,15 +243,15 @@ def quick_pca_2_plot():
     ax.scatter(x_new_zero[:,0], x_new_zero[:,1], c='orange', label='down', alpha=.1)
     plt.legend(loc='best')
             
-def quick_line_plot(price_series, figtitle):
+def plot_line_data(price_series, figtitle):
     fig, ax = plt.subplots(figsize=(25,10))
     ax.plot(price_series)
     ax.set_title(figtitle)
     
-def quick_plot_feature(feature_names, date_start, date_end):
+def plot_a_feature(feature_names, date_start, date_end):
     df.loc[date_start:date_end].plot(y=feature_names, figsize=(25,10))
     
-def quick_plot_pca_elbow():
+def plot_pca_elbow():
     ss = StandardScaler()
     x_ss = ss.fit_transform(x)
     pca = PCA()
@@ -239,6 +262,10 @@ def quick_plot_pca_elbow():
     plt.plot(pca.explained_variance_)
     plt.xlabel('n_components')
     plt.ylabel('explained_variance_')
+    
+def plot_pred_proba_hist(y_pred_proba):
+    fig, ax = plt.subplots(figsize=(25,10))
+    ax.hist(y_pred_proba, bins=100)
     
     
 
@@ -252,24 +279,28 @@ if __name__ == '__main__':
     x, y = split_data_x_y()
     pipes = get_pipelines()
     print('got pipes')
-    scores = pipe_cross_val()
-    print(scores)
+    prediction_df = pipe_cross_val()
     
-# =============================================================================
-#     quick_pca_2_plot()
-#     plt.show()
-# =============================================================================
-# =============================================================================
-#     quick_plot_pca_elbow()
-#     plt.show()
-# =============================================================================
-
-# =============================================================================
-#     print('get xg')
-#     xg_cross_val()
-#     print('completed cross val')
-#     print(scores)
-# =============================================================================
+    for mod in pipes.keys():
+        plot_prediction_roc(mod, prediction_df['y_test_2'], prediction_df['{}_2_pred_proba'.format(mod)])
+        print_predictions_stats(mod, prediction_df['y_test_2'], prediction_df['{}_2_pred'.format(mod)])
+    plt.show()
+    
+    calc_prediction_returns()
+    
+    return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' and col[:2] == 'lr']
+    for return_col in return_cols:
+        plot_prediction_returns(prediction_df[return_col])
+    plt.show()
+    
+    compare_scalers_plot()
+    plt.show()
+    
+    plot_pca_2()
+    plt.show()
+    
+    plot_pca_elbow()
+    plt.show()
     
     
     
