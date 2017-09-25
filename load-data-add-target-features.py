@@ -223,6 +223,11 @@ def dump_big_gridsearch():
             'pca__n_components': tuple(range(6, 20, 2)),
             'clf': (GradientBoostingClassifier(),),
             'clf__n_estimators': (100, 500, 1000),
+            'clf__max_depth': (3,5,8)},
+            {
+            'pca__n_components': tuple(range(6, 20, 2)),
+            'clf': (XGBClassifier(),),
+            'clf__n_estimators': (100, 200, 500, 1000),
             'clf__max_depth': (3,5,8)}]
     grid_search = GridSearchCV(pipeline,
                              param_grid=parameters,
@@ -320,7 +325,7 @@ def plot_pred_proba_hist(y_pred_proba):
     
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
+    df = get_data('EUR_USD_M1', datetime(2016,4,1))
     print('got data')
     add_target()
     print('added targets')
@@ -329,7 +334,6 @@ if __name__ == '__main__':
     x, y = split_data_x_y()
     pipes = get_pipelines()
     print('got pipes')
-    print('grid searching')
     grid_search = dump_big_gridsearch()
     
     
@@ -378,6 +382,8 @@ if __name__ == '__main__':
     
     add nmf, t-sne, lda?
     
+    gridsearch feature selection, feature reduction, models, customize scoring
+    
     only trade if proba is standard deviations away
     
     add returns, alpha, beta, sharpe, sortino, max drawdown, volatility
@@ -394,7 +400,6 @@ if __name__ == '__main__':
     ‘recall’ etc.	metrics.recall_score	suffixes apply as with ‘f1’
     ‘roc_auc’	metrics.roc_auc_score
     
-    gridsearch features, pca, models
     
     live data pipeline and model prediction
     
