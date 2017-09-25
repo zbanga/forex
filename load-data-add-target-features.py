@@ -35,6 +35,8 @@ import xgboost as xgb
 from xgboost import XGBClassifier
 import gc
 import operator
+import time
+import pickle
 plt.style.use('ggplot')
 
 def get_data(file_name, date_start, date_end):
@@ -108,66 +110,65 @@ def get_nn():
     num_neurons_in_layer = 50
     num_inputs = 5 #x_train.shape[1]
     num_classes = 2 #y_train_binary.shape[1]
+    #Dense(input_dim=5, activation="tanh", units=50, kernel_initializer="uniform")
     model.add(Dense(input_dim=num_inputs, 
-                     output_dim=num_neurons_in_layer, 
-                     init='uniform', 
+                     units=num_neurons_in_layer, 
+                     kernel_initializer='uniform', 
                      activation='tanh')) 
     model.add(Dense(input_dim=num_neurons_in_layer, 
-                     output_dim=num_neurons_in_layer, 
-                     init='uniform', 
+                     units=num_neurons_in_layer, 
+                     kernel_initializer='uniform', 
                      activation='tanh'))
     model.add(Dense(input_dim=num_neurons_in_layer, 
-                     output_dim=num_neurons_in_layer, 
-                     init='uniform', 
-                     activation='sigmoid'))
+                     units=num_neurons_in_layer, 
+                     kernel_initializer='uniform', 
+                     activation='tanh'))
     model.add(Dense(input_dim=num_neurons_in_layer, 
-                     output_dim=num_classes,
-                     init='uniform', 
+                     units=num_classes,
+                     kernel_initializer='uniform', 
                      activation='softmax')) 
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=["accuracy"] ) # (keep)
     return model
 
 def get_pipelines():
-    lr = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', LogisticRegression())])
-    dtc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', DecisionTreeClassifier())])
-    rfc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', RandomForestClassifier(n_jobs=-1))])
-    abc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', AdaBoostClassifier())])
-    gbc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', GradientBoostingClassifier())])
-    nnm = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', KerasClassifier(build_fn=get_nn, epochs=100, batch_size=500, verbose=1))])
-    xgb = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', XGBClassifier())])
-    mlp = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', MLPClassifier((100,3)))])
-    svl = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', SVC(kernel="linear", C=0.025))])
-    svc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', SVC(gamma=2, C=1))])
-    knc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', KNeighborsClassifier(3))])
-    #gpc = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', GaussianProcessClassifier(1.0 * RBF(1.0), warm_start=True))])
-    gnb = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', GaussianNB())])
-    qda = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=5)), ('clf', QuadraticDiscriminantAnalysis())])
+    lr = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
+    dtc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', DecisionTreeClassifier())])
+    rfc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', RandomForestClassifier(n_jobs=-1))])
+    abc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', AdaBoostClassifier())])
+    gbc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', GradientBoostingClassifier())])
+    nnm = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', KerasClassifier(build_fn=get_nn, epochs=100, batch_size=500, verbose=0))])
+    xgb = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', XGBClassifier())])
+    mlp = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', MLPClassifier(hidden_layer_sizes=(100,3), activation='tanh'))])
+    svc_r = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', SVC(kernel='rbf', probability=True))])
+    svc_l = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', SVC(kernel='linear', probability=True))])
+    svc_p = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', SVC(kernel='poly', probability=True))])
+    svc_s = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', SVC(kernel='sigmoid', probability=True))])
+    knc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', KNeighborsClassifier(3, n_jobs=-1))])
+    gpc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', GaussianProcessClassifier(n_jobs=-1))])
+    gnb = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', GaussianNB())])
+    qda = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', QuadraticDiscriminantAnalysis())])
     pipes = {
             'lr': lr,
-# =============================================================================
-#             'dtc': dtc,
-#             'rfc': rfc,
-#             'abc': abc,
-# =============================================================================
+            'dtc': dtc,
+            'rfc': rfc,
+            'abc': abc,
             'gbc': gbc,
-# =============================================================================
             'nnm': nnm,
             'xgb': xgb,
-# =============================================================================
-            'mlp': mlp
-# =============================================================================
-#             'svl': svl,
-#             'svc': svc,
-#             'knc': knc,
-#             #'gpc': gpc,
-#             'gnb': gnb,
-#             'qda': qda
-# =============================================================================
+            'mlp': mlp,
+            'gnb': gnb,
+            'qda': qda
+            #'svc_r': svc_r,
+            #'svc_l': svc_l,
+            #'svc_p': svc_p,
+            #'svc_s': svc_s,
+            #'knc': knc,
+            #'gpc': gpc
             }
     return pipes
 
 def pipe_cross_val():
-    ts = TimeSeriesSplit(n_splits=3)
+    ts = TimeSeriesSplit(n_splits=2)
     prediction_df = pd.DataFrame([])
     for split_index, (train_index, test_index) in enumerate(ts.split(x)):
         print('split index: {}'.format(split_index))
@@ -176,17 +177,19 @@ def pipe_cross_val():
         prediction_df['y_test_{}'.format(str(split_index))] = y_test.values
         prediction_df['log_returns_{}'.format(str(split_index))] = df['log_returns'][test_index].values        
         for key, pipe in pipes.items():
-            print('training {}'.format(key))
+            start = time.time()
             pipe.fit(x_train, y_train)
             y_pred = pipe.predict(x_test)
             y_pred_proba = pipe.predict_proba(x_test)
             prediction_df['{}_{}_pred'.format(key, str(split_index))] = y_pred
             prediction_df['{}_{}_pred_proba'.format(key, str(split_index))] = y_pred_proba[:,1]
+            end = time.time()
+            print('trained: {} seconds: {:.2f}'.format(key, end-start))
     return prediction_df
 
 def calc_prediction_returns():
-    prediction_cols = [col for col in prediction_df.columns if col[-4:] == 'pred']
-    for pred_col in prediction_cols:
+    pred_cols = [col for col in prediction_df.columns if col[-4:] == 'pred']
+    for pred_col in pred_cols:
         sp_ind = re.search('_\d_', pred_col).group(0)[1]
         prediction_df[pred_col] = prediction_df[pred_col].map({1:1, 0:-1}).shift(1)
         prediction_df[pred_col+'_returns'] = prediction_df[pred_col] * prediction_df['log_returns_{}'.format(sp_ind)]
@@ -205,7 +208,53 @@ def print_predictions_stats(mod_name, y_true, y_pred):
     print('confusion matrix: ')
     print(pd.crosstab(y_true, y_pred))
 
-def compare_scalers_plot():
+def dump_big_gridsearch():
+    pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
+    parameters = [{
+            'pca__n_components': list(range(6, 20, 2)),
+            'clf': (LogisticRegression(),),
+            'clf__C': (0.1, 0.01, .001),
+            'clf__penalty': ('l2', 'l1')},
+            {
+            'pca__n_components': tuple(range(6, 20, 2)),
+            'clf': (RandomForestClassifier(),),
+            'clf__n_estimators': (10, 50, 100)},
+            {
+            'pca__n_components': tuple(range(6, 20, 2)),
+            'clf': (GradientBoostingClassifier(),),
+            'clf__n_estimators': (100, 500, 1000),
+            'clf__max_depth': (3,5,8)}]
+    grid_search = GridSearchCV(pipeline,
+                             param_grid=parameters,
+                             verbose=1,
+                             n_jobs=-1,
+                             cv=TimeSeriesSplit(2),
+                             scoring='roc_auc')
+    grid_search.fit(x, y)
+    pickle.dump(grid_search, open('grid_search.pkl', 'wb'))
+    return grid_search
+
+def load_big_gridsearch():
+    clf2 = pickle.load(open('grid_search.pkl', 'rb'))
+
+
+def gridsearch_pipes():
+    param_grid = {
+            'pca__n_components': list(range(2,20,2)),
+            'clf__n_estimators': [100, 500, 1000],
+            'clf__max_depth': [3, 5, 8]
+            }
+    estimator = GridSearchCV(estimator=pipes['gbc'],
+                             param_grid=param_grid, 
+                             n_jobs=-1,
+                             cv=TimeSeriesSplit(2),
+                             scoring='roc_auc')
+    estimator.fit(x, y)
+    print(estimator.best_estimator_.named_steps['pca'].n_components)
+    
+
+
+def plot_compare_scalers():
     close_prices = df['close'].values.reshape(-1,1)
     sc, mm, ma, rs = StandardScaler(), MinMaxScaler(), MaxAbsScaler(), RobustScaler()
     scalers = [sc, mm, ma, rs]
@@ -224,7 +273,7 @@ def compare_scalers_plot():
 def plot_prediction_roc(mod_name, y_true, y_pred_proba):
     fpr, tpr, thresholds = roc_curve(y_true, y_pred_proba)
     roc_auc = auc(fpr, tpr) * 100
-    plt.plot(fpr, tpr, lw=1, label='{} auc: {:.2f}'.format(mod_name, roc_auc))
+    plt.plot(fpr, tpr, lw=2, label='{} auc: {:.2f}'.format(mod_name, roc_auc))
     plt.plot([0, 1], [0, 1], 'k--', lw=1)
     plt.legend(loc='best')
     
@@ -264,8 +313,9 @@ def plot_pca_elbow():
     plt.ylabel('explained_variance_')
     
 def plot_pred_proba_hist(y_pred_proba):
-    fig, ax = plt.subplots(figsize=(25,10))
+    fig, ax = plt.subplots()
     ax.hist(y_pred_proba, bins=100)
+    ax.set_title(y_pred_proba)
     
     
 
@@ -279,30 +329,76 @@ if __name__ == '__main__':
     x, y = split_data_x_y()
     pipes = get_pipelines()
     print('got pipes')
-    prediction_df = pipe_cross_val()
-    
-    for mod in pipes.keys():
-        plot_prediction_roc(mod, prediction_df['y_test_2'], prediction_df['{}_2_pred_proba'.format(mod)])
-        print_predictions_stats(mod, prediction_df['y_test_2'], prediction_df['{}_2_pred'.format(mod)])
-    plt.show()
-    
-    calc_prediction_returns()
-    
-    return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' and col[:2] == 'lr']
-    for return_col in return_cols:
-        plot_prediction_returns(prediction_df[return_col])
-    plt.show()
-    
-    compare_scalers_plot()
-    plt.show()
-    
-    plot_pca_2()
-    plt.show()
-    
-    plot_pca_elbow()
-    plt.show()
+    print('grid searching')
+    grid_search = dump_big_gridsearch()
     
     
+    
+# =============================================================================
+#     prediction_df = pipe_cross_val()
+#     
+#     pred_cols = [col for col in prediction_df.columns if col[-4:] == 'pred' and col[-6]=='1']
+#     for pred_col in pred_cols:
+#         sp_ind = re.search('_\d_', pred_col).group(0)[1]
+#         print_predictions_stats(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
+#     
+#     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba' and col[-12]=='1']
+#     for pred_col in proba_cols:
+#         sp_ind = re.search('_\d_', pred_col).group(0)[1]
+#         plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
+#     plt.show()
+# =============================================================================
+    
+# =============================================================================
+#     calc_prediction_returns()
+#     
+#     return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' and col[:3] in ('lr_', 'mlp')]
+#     for return_col in return_cols:
+#         plot_prediction_returns(prediction_df[return_col])
+#     plt.show()
+#     
+#     plot_compare_scalers()
+#     plt.show()
+#     
+#     plot_pca_2()
+#     plt.show()
+#     
+#     plot_pca_elbow()
+#     plt.show()
+#     
+#     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba' and col[:2] == 'lr']
+#     for return_col in proba_cols:
+#         plot_pred_proba_hist(return_col, prediction_df[return_col])
+#     plt.show()
+# =============================================================================
+    
+    
+    '''
+    todo
+    
+    add nmf, t-sne, lda?
+    
+    only trade if proba is standard deviations away
+    
+    add returns, alpha, beta, sharpe, sortino, max drawdown, volatility
+    Classification Metrics 	 
+    ‘accuracy’	metrics.accuracy_score	 
+    ‘average_precision’	metrics.average_precision_score	 
+    ‘f1’	metrics.f1_score	for binary targets
+    ‘f1_micro’	metrics.f1_score	micro-averaged
+    ‘f1_macro’	metrics.f1_score	macro-averaged
+    ‘f1_weighted’	metrics.f1_score	weighted average
+    ‘f1_samples’	metrics.f1_score	by multilabel sample
+    ‘neg_log_loss’	metrics.log_loss	requires predict_proba support
+    ‘precision’ etc.	metrics.precision_score	suffixes apply as with ‘f1’
+    ‘recall’ etc.	metrics.recall_score	suffixes apply as with ‘f1’
+    ‘roc_auc’	metrics.roc_auc_score
+    
+    gridsearch features, pca, models
+    
+    live data pipeline and model prediction
+    
+    '''
     
     
     pass

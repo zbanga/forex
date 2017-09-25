@@ -46,7 +46,7 @@ forex
     * https://github.com/quantopian/zipline
     * http://gbeced.github.io/pyalgotrade/
     * https://github.com/mementum/backtrader
-  * returns
+  * returns, alpha, beta, sharpe, sortino, max drawdown, volatility
   * precision, recall, accuracy
   * mean squared error, root mean squared error
 * other references
