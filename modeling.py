@@ -224,8 +224,10 @@ def gridsearch_pipe():
                              cv=TimeSeriesSplit(2),
                              scoring=score_returns)
     grid_search.fit(x, y)
-    pickle.dump(grid_search, open('grid_search_pipe.pkl', 'wb'))
-    return grid_search
+    grid_search_results = pd.DataFrame(grid_search.cv_results_)
+    pickle.dump(grid_search, open('grid_search_one_object.pkl', 'wb'))
+    pickle.dump(grid_search_results, open('grid_search_results_one_df.pkl', 'wb'))
+    return grid_search, grid_search_results
 
 def dump_big_gridsearch():
     score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
@@ -276,24 +278,17 @@ def dump_big_gridsearch():
                              cv=TimeSeriesSplit(2),
                              scoring=score_returns)
     grid_search.fit(x, y)
-    pickle.dump(grid_search, open('grid_search_big.pkl', 'wb'))
-    return grid_search
+    grid_search_results = pd.DataFrame(grid_search.cv_results_)
+    pickle.dump(grid_search, open('grid_search_big_object.pkl', 'wb'))
+    pickle.dump(grid_search_results, open('grid_search_results_big_df.pkl', 'wb'))
+    return grid_search, grid_search_results
 
-def load_gridsearch():
+def load_gridsearch(file_name):
     '''
     load pickled gridsearched model
     '''
-    model = pickle.load(open('grid_search.pkl', 'rb'))
+    model = pickle.load(open(file_name, 'rb'))
     return model
-    
-def gridsearch_results_to_df():
-    '''
-    convert gridsearch results to pandas df
-    '''
-    
-    
-    
-    pass
 
 def pipe_cross_val(n_splits=2):
     '''
@@ -318,7 +313,7 @@ def pipe_cross_val(n_splits=2):
             print('trained: {} seconds: {:.2f}'.format(key, end-start))
     return prediction_df
 
-def calc_prediction_returns_pred():
+def calc_and_print_prediction_returns_pred():
     '''
     use the prediction 0 or 1 to trade
     '''
@@ -328,7 +323,7 @@ def calc_prediction_returns_pred():
         prediction_df[pred_col+'_returns'] = prediction_df[pred_col].map({1:1, 0:-1}).shift(1) * prediction_df['log_returns_{}'.format(sp_ind)]
         print('{} {:.2f}%'.format(pred_col+'_returns', (np.exp(np.sum(prediction_df[pred_col+'_returns']))-1)*100))
 
-def calc_prediction_returns_proba():
+def calc_and_print_prediction_returns_proba():
     '''
     use the predict proba (0.0 to 1.0) to trade the distribution and standard deviations
     '''
@@ -337,18 +332,23 @@ def calc_prediction_returns_proba():
     
     pass
 
-def calc_prediction_stats(mod_name, y_true, y_pred):
-    print('\n', mod_name)
-    up = sum(y_true==1) / len(y_true) *100
-    print('up: {:.2f}%'.format(up))
-    print('down: {:.2f}%'.format(1-up))
-    print('accuracy: {:.2f}%'.format(accuracy_score(y_true, y_pred)*100))
-    y_true = pd.Series(y_true, name='Actual')
-    y_pred = pd.Series(y_pred, name='Predicted')
-    print('classification report: ')
-    print(classification_report(y_true, y_pred))
-    print('confusion matrix: ')
-    print(pd.crosstab(y_true, y_pred))
+def calc_and_print_prediction_stats():
+    pred_cols = [col for col in prediction_df.columns if col[-4:] == 'pred']
+    for pred_col in pred_cols:
+        sp_ind = re.search('_\d_', pred_col).group(0)[1]
+        y_true = prediction_df['y_test_{}'.format(sp_ind)]
+        y_pred = prediction_df[pred_col]
+        print('\n', pred_col)
+        up = sum(y_true==1) / len(y_true) *100
+        print('up: {:.2f}%'.format(up))
+        print('down: {:.2f}%'.format(1-up))
+        print('accuracy: {:.2f}%'.format(accuracy_score(y_true, y_pred)*100))
+        y_true = pd.Series(y_true, name='Actual')
+        y_pred = pd.Series(y_pred, name='Predicted')
+        print('classification report: ')
+        print(classification_report(y_true, y_pred))
+        print('confusion matrix: ')
+        print(pd.crosstab(y_true, y_pred))
     
 def plot_compare_scalers():
     close_prices = df['close'].values.reshape(-1,1)
@@ -425,17 +425,15 @@ if __name__ == '__main__':
     x, y = split_data_x_y()
     pipes = get_pipelines()
     print('got pipes')
-    grid_search = gridsearch_pipe()
+    grid_search, grid_search_results = dump_big_gridsearch()
+    print('complted gridsearch')
     pipes = {'grid': grid_search.best_estimator_}
     prediction_df = pipe_cross_val(n_splits=2)
-    calc_prediction_returns_pred()
+    print('cross val pipe')
+    calc_and_print_prediction_returns_pred()
+    calc_and_print_prediction_stats()
     
 # =============================================================================
-#     pred_cols = [col for col in prediction_df.columns if col[-4:] == 'pred']
-#     for pred_col in pred_cols:
-#         sp_ind = re.search('_\d_', pred_col).group(0)[1]
-#         calc_prediction_stats(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
-#     
 #     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
 #     for pred_col in proba_cols:
 #         sp_ind = re.search('_\d_', pred_col).group(0)[1]
