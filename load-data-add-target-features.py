@@ -10,10 +10,10 @@ from datetime import datetime
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier
-from sklearn.metrics import recall_score, accuracy_score, precision_score
+from sklearn.metrics import recall_score, accuracy_score, precision_score, roc_curve, auc, classification_report
 from sklearn.model_selection import train_test_split, KFold, GridSearchCV, cross_val_score, TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, MaxAbsScaler, RobustScaler
-from sklearn.metrics import roc_curve, auc, classification_report
+from sklearn.metrics.scorer import make_scorer
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
@@ -40,6 +40,9 @@ import pickle
 plt.style.use('ggplot')
 
 def get_data(file_name, date_start, date_end):
+    '''
+    pickled df of candles with open, high, low, close, volume, complete
+    '''
     df = pd.read_pickle('data/'+file_name)
     df.set_index('time', inplace=True)
     df.drop('complete', axis=1, inplace=True)
@@ -48,6 +51,9 @@ def get_data(file_name, date_start, date_end):
     return df
 
 def up_down(row):
+    '''
+    did the instrument move up or down
+    '''
     if row >= 0:
         return 1
     elif row < 0:
@@ -56,6 +62,10 @@ def up_down(row):
         None
 
 def add_target():
+    '''
+    target is the next candles direction (up/dow) shifted to the current timestamp
+    predicting the next direction
+    '''
     df['log_returns'] = np.log(df['close'] / df['close'].shift(1))
     df['ari_returns'] = (df['close'] / df['close'].shift(1)) - 1
     df['log_returns_shifted'] = np.log(df['close'].shift(-1) / df['close'])
@@ -63,6 +73,10 @@ def add_target():
     df['target_label_direction_shifted'] = df['log_returns_shifted'].apply(up_down)
 
 def add_features():
+    '''
+    technical analysis features
+    http://mrjbq7.github.io/ta-lib/doc_index.html
+    '''
     mom_ind = talib.get_function_groups()['Momentum Indicators']
     over_stud = talib.get_function_groups()['Overlap Studies']
     volu_ind = talib.get_function_groups()['Volume Indicators']
@@ -89,6 +103,10 @@ def add_features():
         df[col_name] = talib.MAVP(df['close'].values, periods=np.array([float(per)]*df.shape[0]))
     
 def split_data_x_y():
+    '''
+    x is only the technical analysis features
+    y is only the whether the close of the next candle went up or down
+    '''
     drop_columns = ['volume', 'close', 'high', 'low', 'open', 'complete', 'log_returns', 'ari_returns', 'log_returns_shifted', 'target_label_direction', 'target_label_direction_shifted']
     predict_columns = [i for i in df.columns if i not in drop_columns]
     df.dropna(inplace=True)
@@ -104,13 +122,23 @@ def split_data_x_y():
 #         mom_cols.append(col)
 #     return mom_cols
 # =============================================================================
+def calc_feature_importance():
+    '''
+    http://scikit-learn.org/stable/modules/feature_selection.html#feature-selection
+    '''
+    
+    
+    
+    
+    pass
        
-def get_nn():
+def get_nn(num_inputs=20):
+    '''
+    build keras/tensorflow nn
+    '''
     model = Sequential()
     num_neurons_in_layer = 50
-    num_inputs = 5 #x_train.shape[1]
-    num_classes = 2 #y_train_binary.shape[1]
-    #Dense(input_dim=5, activation="tanh", units=50, kernel_initializer="uniform")
+    num_classes = 2
     model.add(Dense(input_dim=num_inputs, 
                      units=num_neurons_in_layer, 
                      kernel_initializer='uniform', 
@@ -127,16 +155,19 @@ def get_nn():
                      units=num_classes,
                      kernel_initializer='uniform', 
                      activation='softmax')) 
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=["accuracy"] ) # (keep)
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=["accuracy"])
     return model
 
 def get_pipelines():
+    '''
+    builds pipelines to cross val and gridsearch
+    '''
     lr = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
     dtc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', DecisionTreeClassifier())])
     rfc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', RandomForestClassifier(n_jobs=-1))])
     abc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', AdaBoostClassifier())])
     gbc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', GradientBoostingClassifier())])
-    nnm = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', KerasClassifier(build_fn=get_nn, epochs=100, batch_size=500, verbose=0))])
+    nnm = Pipeline([('scale',StandardScaler()), ('pca', PCA(20)), ('clf', KerasClassifier(build_fn=get_nn, epochs=100, batch_size=500, verbose=0))])
     xgb = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', XGBClassifier())])
     mlp = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', MLPClassifier(hidden_layer_sizes=(100,3), activation='tanh'))])
     svc_r = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', SVC(kernel='rbf', probability=True))])
@@ -148,16 +179,16 @@ def get_pipelines():
     gnb = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', GaussianNB())])
     qda = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', QuadraticDiscriminantAnalysis())])
     pipes = {
-            'lr': lr,
-            'dtc': dtc,
-            'rfc': rfc,
-            'abc': abc,
-            'gbc': gbc,
-            'nnm': nnm,
-            'xgb': xgb,
-            'mlp': mlp,
-            'gnb': gnb,
-            'qda': qda
+            'lr': lr
+            #'dtc': dtc,
+            #'rfc': rfc,
+            #'abc': abc,
+            #'gbc': gbc,
+            #'nnm': nnm,
+            #'xgb': xgb,
+            #'mlp': mlp,
+            #'gnb': gnb,
+            #'qda': qda
             #'svc_r': svc_r,
             #'svc_l': svc_l,
             #'svc_p': svc_p,
@@ -167,8 +198,108 @@ def get_pipelines():
             }
     return pipes
 
-def pipe_cross_val():
-    ts = TimeSeriesSplit(n_splits=2)
+def gridsearch_score_returns(y_true, y_pred):
+    '''
+    gridsearch scoring function that returns cumulative returns
+    '''
+    prediction_df = pd.DataFrame([])
+    prediction_df['log_returns'] = df['log_returns'][y_true.index]
+    prediction_df['y_pred'] = y_pred
+    score = (np.exp(np.sum(prediction_df['y_pred'].map({1:1, 0:-1}).shift(1) * prediction_df['log_returns']))-1)*100
+    print('{:.2f}%'.format(score))
+    return score
+
+def gridsearch_pipe():
+    score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
+    pca_range = list(range(4,14,2))
+    param_grid = {
+            'pca__n_components': pca_range,
+            'clf': [LogisticRegression()],
+            'clf__C': [0.1, 0.01, .001],
+            'clf__penalty': ['l2', 'l1']}
+    grid_search = GridSearchCV(estimator=pipes['lr'],
+                             param_grid=param_grid, 
+                             n_jobs=-1,
+                             verbose=2,
+                             cv=TimeSeriesSplit(2),
+                             scoring=score_returns)
+    grid_search.fit(x, y)
+    pickle.dump(grid_search, open('grid_search_pipe.pkl', 'wb'))
+    return grid_search
+
+def dump_big_gridsearch():
+    score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
+    pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
+    pca_range = list(range(8,30, 2))
+    parameters = [{
+            'pca__n_components': pca_range,
+            'clf': [LogisticRegression()],
+            'clf__C': [0.1, 0.01, .001],
+            'clf__penalty': ['l2', 'l1']},
+            {
+            'pca__n_components': pca_range,
+            'clf': [DecisionTreeClassifier()],
+            'clf__max_depth': [None, 10, 20, 50]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [RandomForestClassifier()],
+            'clf__n_estimators': [10, 50, 100]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [GradientBoostingClassifier()],
+            'clf__n_estimators': [100, 500, 1000],
+            'clf__max_depth': [3,5,8]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [AdaBoostClassifier()],
+            'clf__n_estimators': [100, 500, 1000]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [XGBClassifier()],
+            'clf__n_estimators': [100, 200, 500, 1000],
+            'clf__max_depth': [3,5,8]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [MLPClassifier()],
+            'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(100,1),(100,2),(100,3)],
+            'clf__activation': ['logistic', 'tanh', 'relu']}]
+# =============================================================================
+#             {
+#             'clf': (KerasClassifier(build_fn=get_nn, num_inputs=20, verbose=0)),
+#             'clf__epochs': [100, 200, 500, 1000],
+#             'clf__batch_size': [200, 500, 1000, 2000]},
+# =============================================================================
+    grid_search = GridSearchCV(pipeline,
+                             param_grid=parameters,
+                             verbose=2,
+                             n_jobs=-1,
+                             cv=TimeSeriesSplit(2),
+                             scoring=score_returns)
+    grid_search.fit(x, y)
+    pickle.dump(grid_search, open('grid_search_big.pkl', 'wb'))
+    return grid_search
+
+def load_gridsearch():
+    '''
+    load pickled gridsearched model
+    '''
+    model = pickle.load(open('grid_search.pkl', 'rb'))
+    return model
+    
+def gridsearch_results_to_df():
+    '''
+    convert gridsearch results to pandas df
+    '''
+    
+    
+    
+    pass
+
+def pipe_cross_val(n_splits=2):
+    '''
+    cross validates models and returns prediction results
+    '''
+    ts = TimeSeriesSplit(n_splits=n_splits)
     prediction_df = pd.DataFrame([])
     for split_index, (train_index, test_index) in enumerate(ts.split(x)):
         print('split index: {}'.format(split_index))
@@ -187,15 +318,26 @@ def pipe_cross_val():
             print('trained: {} seconds: {:.2f}'.format(key, end-start))
     return prediction_df
 
-def calc_prediction_returns():
+def calc_prediction_returns_pred():
+    '''
+    use the prediction 0 or 1 to trade
+    '''
     pred_cols = [col for col in prediction_df.columns if col[-4:] == 'pred']
     for pred_col in pred_cols:
         sp_ind = re.search('_\d_', pred_col).group(0)[1]
-        prediction_df[pred_col] = prediction_df[pred_col].map({1:1, 0:-1}).shift(1)
-        prediction_df[pred_col+'_returns'] = prediction_df[pred_col] * prediction_df['log_returns_{}'.format(sp_ind)]
+        prediction_df[pred_col+'_returns'] = prediction_df[pred_col].map({1:1, 0:-1}).shift(1) * prediction_df['log_returns_{}'.format(sp_ind)]
         print('{} {:.2f}%'.format(pred_col+'_returns', (np.exp(np.sum(prediction_df[pred_col+'_returns']))-1)*100))
 
-def print_predictions_stats(mod_name, y_true, y_pred):
+def calc_prediction_returns_proba():
+    '''
+    use the predict proba (0.0 to 1.0) to trade the distribution and standard deviations
+    '''
+    
+    
+    
+    pass
+
+def calc_prediction_stats(mod_name, y_true, y_pred):
     print('\n', mod_name)
     up = sum(y_true==1) / len(y_true) *100
     print('up: {:.2f}%'.format(up))
@@ -207,58 +349,7 @@ def print_predictions_stats(mod_name, y_true, y_pred):
     print(classification_report(y_true, y_pred))
     print('confusion matrix: ')
     print(pd.crosstab(y_true, y_pred))
-
-def dump_big_gridsearch():
-    pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
-    parameters = [{
-            'pca__n_components': list(range(6, 20, 2)),
-            'clf': (LogisticRegression(),),
-            'clf__C': (0.1, 0.01, .001),
-            'clf__penalty': ('l2', 'l1')},
-            {
-            'pca__n_components': tuple(range(6, 20, 2)),
-            'clf': (RandomForestClassifier(),),
-            'clf__n_estimators': (10, 50, 100)},
-            {
-            'pca__n_components': tuple(range(6, 20, 2)),
-            'clf': (GradientBoostingClassifier(),),
-            'clf__n_estimators': (100, 500, 1000),
-            'clf__max_depth': (3,5,8)},
-            {
-            'pca__n_components': tuple(range(6, 20, 2)),
-            'clf': (XGBClassifier(),),
-            'clf__n_estimators': (100, 200, 500, 1000),
-            'clf__max_depth': (3,5,8)}]
-    grid_search = GridSearchCV(pipeline,
-                             param_grid=parameters,
-                             verbose=1,
-                             n_jobs=-1,
-                             cv=TimeSeriesSplit(2),
-                             scoring='roc_auc')
-    grid_search.fit(x, y)
-    pickle.dump(grid_search, open('grid_search.pkl', 'wb'))
-    return grid_search
-
-def load_big_gridsearch():
-    clf2 = pickle.load(open('grid_search.pkl', 'rb'))
-
-
-def gridsearch_pipes():
-    param_grid = {
-            'pca__n_components': list(range(2,20,2)),
-            'clf__n_estimators': [100, 500, 1000],
-            'clf__max_depth': [3, 5, 8]
-            }
-    estimator = GridSearchCV(estimator=pipes['gbc'],
-                             param_grid=param_grid, 
-                             n_jobs=-1,
-                             cv=TimeSeriesSplit(2),
-                             scoring='roc_auc')
-    estimator.fit(x, y)
-    print(estimator.best_estimator_.named_steps['pca'].n_components)
     
-
-
 def plot_compare_scalers():
     close_prices = df['close'].values.reshape(-1,1)
     sc, mm, ma, rs = StandardScaler(), MinMaxScaler(), MaxAbsScaler(), RobustScaler()
@@ -317,15 +408,15 @@ def plot_pca_elbow():
     plt.xlabel('n_components')
     plt.ylabel('explained_variance_')
     
-def plot_pred_proba_hist(y_pred_proba):
+def plot_pred_proba_hist(plot_title, y_pred_proba):
     fig, ax = plt.subplots()
     ax.hist(y_pred_proba, bins=100)
-    ax.set_title(y_pred_proba)
+    ax.set_title(plot_title)
     
     
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2016,4,1))
+    df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
     print('got data')
     add_target()
     print('added targets')
@@ -334,33 +425,35 @@ if __name__ == '__main__':
     x, y = split_data_x_y()
     pipes = get_pipelines()
     print('got pipes')
-    grid_search = dump_big_gridsearch()
-    
-    
+    grid_search = gridsearch_pipe()
+    pipes = {'grid': grid_search.best_estimator_}
+    prediction_df = pipe_cross_val(n_splits=2)
+    calc_prediction_returns_pred()
     
 # =============================================================================
-#     prediction_df = pipe_cross_val()
-#     
-#     pred_cols = [col for col in prediction_df.columns if col[-4:] == 'pred' and col[-6]=='1']
+#     pred_cols = [col for col in prediction_df.columns if col[-4:] == 'pred']
 #     for pred_col in pred_cols:
 #         sp_ind = re.search('_\d_', pred_col).group(0)[1]
-#         print_predictions_stats(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
+#         calc_prediction_stats(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
 #     
-#     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba' and col[-12]=='1']
+#     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
 #     for pred_col in proba_cols:
 #         sp_ind = re.search('_\d_', pred_col).group(0)[1]
 #         plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
 #     plt.show()
-# =============================================================================
-    
-# =============================================================================
-#     calc_prediction_returns()
 #     
-#     return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' and col[:3] in ('lr_', 'mlp')]
+#     return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' or col[:3] == 'log']
 #     for return_col in return_cols:
 #         plot_prediction_returns(prediction_df[return_col])
 #     plt.show()
 #     
+#     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
+#     for return_col in proba_cols:
+#         plot_pred_proba_hist(return_col, prediction_df[return_col])
+#     plt.show()
+# =============================================================================
+    
+# =============================================================================
 #     plot_compare_scalers()
 #     plt.show()
 #     
@@ -370,15 +463,16 @@ if __name__ == '__main__':
 #     plot_pca_elbow()
 #     plt.show()
 #     
-#     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba' and col[:2] == 'lr']
-#     for return_col in proba_cols:
-#         plot_pred_proba_hist(return_col, prediction_df[return_col])
-#     plt.show()
 # =============================================================================
-    
+
     
     '''
     todo
+    
+    what is the state of the art?
+    what are the technical indicators?
+    why scaling?
+    why log returns?
     
     add nmf, t-sne, lda?
     
