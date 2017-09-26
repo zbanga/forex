@@ -43,7 +43,7 @@ def get_data(file_name, date_start, date_end):
     '''
     pickled df of candles with open, high, low, close, volume, complete
     '''
-    df = pd.read_pickle('data/'+file_name)
+    df = pd.read_pickle('../data/'+file_name)
     df.set_index('time', inplace=True)
     df.drop('complete', axis=1, inplace=True)
     #df_columns = list(df.columns)
@@ -101,7 +101,7 @@ def add_features():
     for per in [3,6,12,18,24,30]:
         col_name = 'MAVP_'+str(per)
         df[col_name] = talib.MAVP(df['close'].values, periods=np.array([float(per)]*df.shape[0]))
-    
+
 def split_data_x_y():
     '''
     x is only the technical analysis features
@@ -126,12 +126,12 @@ def calc_feature_importance():
     '''
     http://scikit-learn.org/stable/modules/feature_selection.html#feature-selection
     '''
-    
-    
-    
-    
+
+
+
+
     pass
-       
+
 def get_nn(num_inputs=20):
     '''
     build keras/tensorflow nn
@@ -139,22 +139,22 @@ def get_nn(num_inputs=20):
     model = Sequential()
     num_neurons_in_layer = 50
     num_classes = 2
-    model.add(Dense(input_dim=num_inputs, 
-                     units=num_neurons_in_layer, 
-                     kernel_initializer='uniform', 
-                     activation='tanh')) 
-    model.add(Dense(input_dim=num_neurons_in_layer, 
-                     units=num_neurons_in_layer, 
-                     kernel_initializer='uniform', 
+    model.add(Dense(input_dim=num_inputs,
+                     units=num_neurons_in_layer,
+                     kernel_initializer='uniform',
                      activation='tanh'))
-    model.add(Dense(input_dim=num_neurons_in_layer, 
-                     units=num_neurons_in_layer, 
-                     kernel_initializer='uniform', 
+    model.add(Dense(input_dim=num_neurons_in_layer,
+                     units=num_neurons_in_layer,
+                     kernel_initializer='uniform',
                      activation='tanh'))
-    model.add(Dense(input_dim=num_neurons_in_layer, 
+    model.add(Dense(input_dim=num_neurons_in_layer,
+                     units=num_neurons_in_layer,
+                     kernel_initializer='uniform',
+                     activation='tanh'))
+    model.add(Dense(input_dim=num_neurons_in_layer,
                      units=num_classes,
-                     kernel_initializer='uniform', 
-                     activation='softmax')) 
+                     kernel_initializer='uniform',
+                     activation='softmax'))
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=["accuracy"])
     return model
 
@@ -209,7 +209,7 @@ def gridsearch_score_returns(y_true, y_pred):
     print('{:.2f}%'.format(score))
     return score
 
-def gridsearch_pipe():
+def gridsearch_pipe(n_splits=2):
     score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
     pca_range = list(range(4,14,2))
     param_grid = {
@@ -218,10 +218,10 @@ def gridsearch_pipe():
             'clf__C': [0.1, 0.01, .001],
             'clf__penalty': ['l2', 'l1']}
     grid_search = GridSearchCV(estimator=pipes['lr'],
-                             param_grid=param_grid, 
+                             param_grid=param_grid,
                              n_jobs=-1,
                              verbose=2,
-                             cv=TimeSeriesSplit(2),
+                             cv=TimeSeriesSplit(n_splits=n_splits),
                              scoring=score_returns)
     grid_search.fit(x, y)
     grid_search_results = pd.DataFrame(grid_search.cv_results_)
@@ -229,7 +229,7 @@ def gridsearch_pipe():
     pickle.dump(grid_search_results, open('grid_search_results_one_df.pkl', 'wb'))
     return grid_search, grid_search_results
 
-def dump_big_gridsearch():
+def dump_big_gridsearch(n_splits=2):
     score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
     pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
     pca_range = list(range(8,30, 2))
@@ -264,7 +264,8 @@ def dump_big_gridsearch():
             'pca__n_components': pca_range,
             'clf': [MLPClassifier()],
             'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(100,1),(100,2),(100,3)],
-            'clf__activation': ['logistic', 'tanh', 'relu']}]
+            'clf__activation': ['logistic', 'tanh', 'relu'],
+            'clf__alpha': [.00001, .0001, .001]}]
 # =============================================================================
 #             {
 #             'clf': (KerasClassifier(build_fn=get_nn, num_inputs=20, verbose=0)),
@@ -275,7 +276,7 @@ def dump_big_gridsearch():
                              param_grid=parameters,
                              verbose=2,
                              n_jobs=-1,
-                             cv=TimeSeriesSplit(2),
+                             cv=TimeSeriesSplit(n_splits=n_splits),
                              scoring=score_returns)
     grid_search.fit(x, y)
     grid_search_results = pd.DataFrame(grid_search.cv_results_)
@@ -301,7 +302,7 @@ def pipe_cross_val(n_splits=2):
         x_train, x_test = x.iloc[train_index], x.iloc[test_index]
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         prediction_df['y_test_{}'.format(str(split_index))] = y_test.values
-        prediction_df['log_returns_{}'.format(str(split_index))] = df['log_returns'][test_index].values        
+        prediction_df['log_returns_{}'.format(str(split_index))] = df['log_returns'][test_index].values
         for key, pipe in pipes.items():
             start = time.time()
             pipe.fit(x_train, y_train)
@@ -315,7 +316,7 @@ def pipe_cross_val(n_splits=2):
 
 def calc_and_print_prediction_returns_pred():
     '''
-    use the prediction 0 or 1 to trade
+    calculates and prints the returns with the prediction 0 or 1 to trade
     '''
     pred_cols = [col for col in prediction_df.columns if col[-4:] == 'pred']
     for pred_col in pred_cols:
@@ -327,12 +328,15 @@ def calc_and_print_prediction_returns_proba():
     '''
     use the predict proba (0.0 to 1.0) to trade the distribution and standard deviations
     '''
-    
-    
-    
+
+
+
     pass
 
 def calc_and_print_prediction_stats():
+    '''
+    calculates and prints the prediction stats
+    '''
     pred_cols = [col for col in prediction_df.columns if col[-4:] == 'pred']
     for pred_col in pred_cols:
         sp_ind = re.search('_\d_', pred_col).group(0)[1]
@@ -349,8 +353,11 @@ def calc_and_print_prediction_stats():
         print(classification_report(y_true, y_pred))
         print('confusion matrix: ')
         print(pd.crosstab(y_true, y_pred))
-    
+
 def plot_compare_scalers():
+    '''
+    compare sklearn scalers
+    '''
     close_prices = df['close'].values.reshape(-1,1)
     sc, mm, ma, rs = StandardScaler(), MinMaxScaler(), MaxAbsScaler(), RobustScaler()
     scalers = [sc, mm, ma, rs]
@@ -367,36 +374,57 @@ def plot_compare_scalers():
             print('{} min: {:.2f} max: {:.2f}'.format(scale.__class__.__name__, close_prices_scaled.min(), close_prices_scaled.max()))
 
 def plot_prediction_roc(mod_name, y_true, y_pred_proba):
+    '''
+    plot roc curves
+    '''
     fpr, tpr, thresholds = roc_curve(y_true, y_pred_proba)
     roc_auc = auc(fpr, tpr) * 100
     plt.plot(fpr, tpr, lw=2, label='{} auc: {:.2f}'.format(mod_name, roc_auc))
     plt.plot([0, 1], [0, 1], 'k--', lw=1)
     plt.legend(loc='best')
-    
+
 def plot_prediction_returns(pred_returns):
+    '''
+    plot returns
+    '''
     cum_returns = pred_returns.cumsum().apply(np.exp)-1 #you can add log returns and then transpose back with np.exp
     plt.plot(cum_returns)
     plt.legend(loc='best')
-    
-def plot_pca_2():
+
+def plot_dim_2():
+    '''
+    plot 2 pca features
+    '''
     pca = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=2))])
-    x_new = pca.fit_transform(x)
-    fig, ax = plt.subplots()
-    x_new_one = x_new[y==1]
-    x_new_zero = x_new[y==0]
-    ax.scatter(x_new_one[:,0], x_new_one[:,1], c='green', label='up', alpha=.1)
-    ax.scatter(x_new_zero[:,0], x_new_zero[:,1], c='orange', label='down', alpha=.1)
+    tsne = Pipeline([('scale',StandardScaler()), ('tsne', TSNE(n_components=2))])
+    dim_red = [pca, tsne]
+    fig, axes = plt.subplots(2, 1)
+    for i, ax in enumerate(axes.reshape(-1)):
+        x_new = dim_red[i].fit_transform(x)
+        x_new_one = x_new[y==1]
+        x_new_zero = x_new[y==0]
+        ax.scatter(x_new_one[:,0], x_new_one[:,1], c='green', label='up', alpha=.1)
+        ax.scatter(x_new_zero[:,0], x_new_zero[:,1], c='orange', label='down', alpha=.1)
     plt.legend(loc='best')
-            
+
 def plot_line_data(price_series, figtitle):
+    '''
+    plot timeseries numbers
+    '''
     fig, ax = plt.subplots(figsize=(25,10))
     ax.plot(price_series)
     ax.set_title(figtitle)
-    
+
 def plot_a_feature(feature_names, date_start, date_end):
+    '''
+    plot features
+    '''
     df.loc[date_start:date_end].plot(y=feature_names, figsize=(25,10))
-    
+
 def plot_pca_elbow():
+    '''
+    plot pca elbow
+    '''
     ss = StandardScaler()
     x_ss = ss.fit_transform(x)
     pca = PCA()
@@ -407,16 +435,19 @@ def plot_pca_elbow():
     plt.plot(pca.explained_variance_)
     plt.xlabel('n_components')
     plt.ylabel('explained_variance_')
-    
+
 def plot_pred_proba_hist(plot_title, y_pred_proba):
+    '''
+    plot predict proba distribution
+    '''
     fig, ax = plt.subplots()
     ax.hist(y_pred_proba, bins=100)
     ax.set_title(plot_title)
-    
-    
+
+
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
+    df = get_data('EUR_USD_M1', datetime(2004,1,1), datetime(2018,1,1))
     print('got data')
     add_target()
     print('added targets')
@@ -425,63 +456,66 @@ if __name__ == '__main__':
     x, y = split_data_x_y()
     pipes = get_pipelines()
     print('got pipes')
-    grid_search, grid_search_results = dump_big_gridsearch()
-    print('complted gridsearch')
-    pipes = {'grid': grid_search.best_estimator_}
+    # grid_search, grid_search_results = dump_big_gridsearch(3)
+    # print('complted gridsearch')
+    # pipes = {'grid': grid_search.best_estimator_}
     prediction_df = pipe_cross_val(n_splits=2)
     print('cross val pipe')
     calc_and_print_prediction_returns_pred()
     calc_and_print_prediction_stats()
-    
+
+    plot_dim_2()
+    plt.show()
+
 # =============================================================================
 #     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
 #     for pred_col in proba_cols:
 #         sp_ind = re.search('_\d_', pred_col).group(0)[1]
 #         plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
 #     plt.show()
-#     
+#
 #     return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' or col[:3] == 'log']
 #     for return_col in return_cols:
 #         plot_prediction_returns(prediction_df[return_col])
 #     plt.show()
-#     
+#
 #     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
 #     for return_col in proba_cols:
 #         plot_pred_proba_hist(return_col, prediction_df[return_col])
 #     plt.show()
 # =============================================================================
-    
+
 # =============================================================================
 #     plot_compare_scalers()
 #     plt.show()
-#     
+#
 #     plot_pca_2()
 #     plt.show()
-#     
+#
 #     plot_pca_elbow()
 #     plt.show()
-#     
+#
 # =============================================================================
 
-    
+
     '''
     todo
-    
+
     what is the state of the art?
     what are the technical indicators?
     why scaling?
     why log returns?
-    
+
     add nmf, t-sne, lda?
-    
+
     gridsearch feature selection, feature reduction, models, customize scoring
-    
+
     only trade if proba is standard deviations away
-    
+
     add returns, alpha, beta, sharpe, sortino, max drawdown, volatility
-    Classification Metrics 	 
-    ‘accuracy’	metrics.accuracy_score	 
-    ‘average_precision’	metrics.average_precision_score	 
+    Classification Metrics
+    ‘accuracy’	metrics.accuracy_score
+    ‘average_precision’	metrics.average_precision_score
     ‘f1’	metrics.f1_score	for binary targets
     ‘f1_micro’	metrics.f1_score	micro-averaged
     ‘f1_macro’	metrics.f1_score	macro-averaged
@@ -491,11 +525,11 @@ if __name__ == '__main__':
     ‘precision’ etc.	metrics.precision_score	suffixes apply as with ‘f1’
     ‘recall’ etc.	metrics.recall_score	suffixes apply as with ‘f1’
     ‘roc_auc’	metrics.roc_auc_score
-    
-    
+
+
     live data pipeline and model prediction
-    
+
     '''
-    
-    
+
+
     pass

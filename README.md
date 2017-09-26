@@ -23,6 +23,11 @@ forex
     * http://www.ta-lib.org/hdr_dw.html
     * https://mrjbq7.github.io/ta-lib/index.html
     * https://github.com/mobone/ta-machine/blob/master/indicators/sqz.py
+    * wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+    * tar xvzf ta-lib-0.4.0-src.tar.gz
+    * ./configure --prefix=/usr
+    * make
+    * sudo make install
 * models
   * classification vs. regression?
   * classic momentum and such
