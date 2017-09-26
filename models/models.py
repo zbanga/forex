@@ -447,7 +447,7 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
 
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2004,1,1), datetime(2018,1,1))
+    df = get_data('EUR_USD_M1', datetime(2017,1,1), datetime(2018,1,1))
     print('got data')
     add_target()
     print('added targets')
