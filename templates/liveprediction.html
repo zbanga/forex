@@ -9,7 +9,8 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Grid</title>
+    <title>Live EUR_USD Predictions</title>
+
 
     <!-- Bootstrap Core CSS -->
     <link href="../static/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -45,7 +46,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="index.html">SB Admin v2.0</a>
+                <a class="navbar-brand" href="index.html">EUR_USD Prediction</a>
             </div>
             <!-- /.navbar-header -->
 
@@ -295,6 +296,9 @@
                             <a href="forms.html"><i class="fa fa-edit fa-fw"></i> Forms</a>
                         </li>
                         <li>
+                            <a href="liveprediction.html">Live Prediction</a>
+                        </li>
+                        <li>
                             <a href="#"><i class="fa fa-wrench fa-fw"></i> UI Elements<span class="fa arrow"></span></a>
                             <ul class="nav nav-second-level">
                                 <li>
@@ -311,10 +315,7 @@
                                 </li>
                                 <li>
                                     <a href="icons.html"> Icons</a>
-                                </li>
-                                <li>
-                                    <a href="grid.html">Grid</a>
-                                </li>
+                                </li
                             </ul>
                             <!-- /.nav-second-level -->
                         </li>
@@ -370,99 +371,105 @@
         <div id="page-wrapper">
             <div class="row">
                 <div class="col-lg-12">
-                    <h1 class="page-header">Grid</h1>
+                    <h1 class="page-header">Live EUR_USD Neural Network and XG Boost Prediction</h1>
                 </div>
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
+            <!-- TradingView Widget BEGIN -->
+            <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+            <script type="text/javascript">
+            new TradingView.widget({
+              "width": 1600,
+              "height": 800,
+              "symbol": "FX_IDC:EURUSD",
+              "interval": "1",
+              "timezone": "Etc/UTC",
+              "theme": "Light",
+              "style": "1",
+              "locale": "en",
+              "toolbar_bg": "#f1f3f6",
+              "enable_publishing": true,
+              "withdateranges": true,
+              "hide_side_toolbar": false,
+              "allow_symbol_change": true,
+              "details": true,
+              "hotlist": true,
+              "calendar": true,
+              "news": [
+                "stocktwits",
+                "headlines"
+              ],
+              "studies": [
+                "RSI@tv-basicstudies"
+              ],
+              "show_popup_button": true,
+              "popup_width": "1000",
+              "popup_height": "650"
+            });
+            </script>
+            <!-- TradingView Widget END -->
+            <br>
+            <br>
             <div class="row">
                 <div class="col-lg-12">
                     <div class="panel panel-default">
                         <div class="panel-body">
-                            <h3>Grid options</h3>
-                            <p>See how aspects of the Bootstrap grid system work across multiple devices with a handy table.</p>
+                            <h3>Live EUR_USD Candle Prediction</h3>
+                            <p>.</p>
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped">
                                     <thead>
                                         <tr>
-                                            <th></th>
                                             <th>
-                                                Extra small devices
-                                                <small>Phones (&lt;768px)</small>
+                                                Candle Size
                                             </th>
                                             <th>
-                                                Small devices
-                                                <small>Tablets (&ge;768px)</small>
+                                                Last Timestamp
                                             </th>
                                             <th>
-                                                Medium devices
-                                                <small>Desktops (&ge;992px)</small>
+                                                Open
                                             </th>
                                             <th>
-                                                Large devices
-                                                <small>Desktops (&ge;1200px)</small>
+                                                High
+                                            </th>
+                                            <th>
+                                                Low
+                                            </th>
+                                            <th>
+                                                Close
+                                            </th>
+                                            <th>
+                                                Volume
+                                            </th>
+                                            <th>
+                                                Next Timestamp Predict
+                                            </th>
+                                            <th>
+                                                Next Timestamp Predict Proba
                                             </th>
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        <!-- ['time', 'open', 'high', 'low', 'close', 'volume', 'table_name','y_pred', 'y_pred_proba'] -->
+                                        {% for time, open, high, low, close, volume, table_name, y_pred, y_pred_proba in data %}
                                         <tr>
-                                            <th>Grid behavior</th>
-                                            <td>Horizontal at all times</td>
-                                            <td colspan="3">Collapsed to start, horizontal above breakpoints</td>
+                                            <th>{{ table_name }}</th>
+                                                <td>{{ time }}</td>
+                                                <td class="danger">{{ open }}</td>
+                                                <td>{{ high }}</td>
+                                                <td>{{ low }}</td>
+                                                <td class="warning">{{ close }}</td>
+                                                <td>{{ volume }}</td>
+                                                <td class="success">{{ y_pred }}</td>
+                                                <td>{{ y_pred_proba }}</td>
                                         </tr>
-                                        <tr>
-                                            <th>Max container width</th>
-                                            <td>None (auto)</td>
-                                            <td>750px</td>
-                                            <td>970px</td>
-                                            <td>1170px</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Class prefix</th>
-                                            <td>
-                                                <code>.col-xs-</code>
-                                            </td>
-                                            <td>
-                                                <code>.col-sm-</code>
-                                            </td>
-                                            <td>
-                                                <code>.col-md-</code>
-                                            </td>
-                                            <td>
-                                                <code>.col-lg-</code>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th># of columns</th>
-                                            <td colspan="4">12</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Max column width</th>
-                                            <td class="text-muted">Auto</td>
-                                            <td>60px</td>
-                                            <td>78px</td>
-                                            <td>95px</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Gutter width</th>
-                                            <td colspan="4">30px (15px on each side of a column)</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Nestable</th>
-                                            <td colspan="4">Yes</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Offsets</th>
-                                            <td colspan="4">Yes</td>
-                                        </tr>
-                                        <tr>
-                                            <th>Column ordering</th>
-                                            <td colspan="4">Yes</td>
+                                        {% endfor %}
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
-                            <p>Grid classes apply to devices with screen widths greater than or equal to the breakpoint sizes, and override grid classes targeted at smaller devices. Therefore, applying any
+                            <p>This advice will make you filthy rich
                                 <code>.col-md-</code> class to an element will not only affect its styling on medium devices but also on large devices if a
                                 <code>.col-lg-</code> class is not present.</p>
                         </div>

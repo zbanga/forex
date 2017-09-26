@@ -135,12 +135,14 @@ def split_data_x_y(df):
     y is only the whether the close of the next candle went up or down
     '''
     drop_columns = ['volume', 'close', 'high', 'low', 'open', 'complete', 'log_returns', 'ari_returns', 'log_returns_shifted', 'target_label_direction', 'target_label_direction_shifted']
+    ohlcv = ['open', 'high', 'low', 'close', 'volume']
     predict_columns = [i for i in df.columns if i not in drop_columns]
-    last_x = df.iloc[-1:][predict_columns]
+    last_x_ohlcv = df.iloc[-1:][ohlcv]
+    last_x_pred = df.iloc[-1:][predict_columns]
     df.dropna(inplace=True)
     y = df['target_label_direction_shifted']
     x = df[predict_columns]
-    return x, y, last_x
+    return x, y, last_x_pred, last_x_ohlcv
 
 def momentum_columns():
     mom_cols = []
@@ -207,7 +209,7 @@ def get_pipelines():
     gnb = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', GaussianNB())])
     qda = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', QuadraticDiscriminantAnalysis())])
     pipes = {
-            'lr': lr
+            'lr': lr,
             'dtc': dtc,
             'rfc': rfc,
             'abc': abc,
@@ -216,7 +218,7 @@ def get_pipelines():
             'xgb': xgb,
             'mlp': mlp,
             'gnb': gnb,
-            'qda': qda
+            'qda': qda,
             'svc_r': svc_r,
             'svc_l': svc_l,
             'svc_p': svc_p,
@@ -260,24 +262,7 @@ def gridsearch_pipe(n_splits=2):
     pickle.dump(grid_search_results, open('grid_search_results_one_df.pkl', 'wb'))
     return grid_search, grid_search_results
 
-def dump_big_gridsearch(n_splits=2):
-    '''
-    grid search every model and return gridsearch and results
-    '''
-    score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
-    pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
-    pca_range = list(range(10,35, 5))
-    parameters = [{
-                'pca__n_components': pca_range,
-                'clf': [MLPClassifier()],
-                'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(50,4),(50,5),(100,1),(100,2),(100,3),(100,4),(100,5)],
-                'clf__activation': ['logistic', 'tanh', 'relu', 'identity'],
-                'clf__alpha': [.000001, .00001, .0001],
-                'clf__batch_size': [200, 500, 1000, 1500, 2000, 3000, 5000],
-                'clf__max_iter': [200, 600, 800, 1000, 2000, 3000, 5000],
-                'clf__shuffle': [False],
-                'clf__early_stopping': [True, False]
-                }]
+def store_grid_params():
     parameters2 = [
             {
             'pca__n_components': pca_range,
@@ -306,17 +291,49 @@ def dump_big_gridsearch(n_splits=2):
             'clf': [XGBClassifier()],
             'clf__n_estimators': [100, 200, 500, 1000],
             'clf__max_depth': [3,5,8]}]
-    grid_search = GridSearchCV(pipeline,
-                             param_grid=parameters,
-                             verbose=1,
-                             n_jobs=-1,
-                             cv=TimeSeriesSplit(n_splits=n_splits),
-                             scoring='roc_auc')
-    grid_search.fit(x, y)
-    grid_search_results = pd.DataFrame(grid_search.cv_results_)
-    pickle.dump(grid_search, open('grid_search_big_object.pkl', 'wb'))
-    pickle.dump(grid_search_results, open('grid_search_results_big_df.pkl', 'wb'))
-    return grid_search, grid_search_results
+    return parameters2
+
+def dump_big_gridsearch(n_splits=2):
+    '''
+    grid search every model and return gridsearch and results
+    '''
+    table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+    start_time_stamps = [datetime(2000,1,1), datetime(2000,1,1), datetime(2000,1,1), datetime(2000,1,1), datetime(2006,1,1), datetime(2012,1,1), datetime(2017,5,1)]
+    for i in range(len(table_names)):
+        table = table_names[i]
+        from_time = start_time_stamps[i]
+        df = get_data(table_name, from_time, datetime(2018,1,1))
+        print('got data')
+        df = add_target(df)
+        print('added targets')
+        df = add_features(df)
+        print('added features')
+        x, y, last_x_pred, last_x_ohlcv = split_data_x_y()
+        print('starting grid search')
+        score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
+        pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
+        pca_range = list(range(10,35, 5))
+        parameters = [{
+                    'pca__n_components': pca_range,
+                    'clf': [MLPClassifier()],
+                    'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(50,4),(50,5),(100,1),(100,2),(100,3),(100,4),(100,5)],
+                    'clf__activation': ['logistic', 'tanh', 'relu', 'identity'],
+                    'clf__alpha': [.000001, .00001, .0001],
+                    'clf__batch_size': [200, 500, 1000, 1500, 2000, 3000, 5000],
+                    'clf__max_iter': [200, 600, 800, 1000, 2000, 3000, 5000],
+                    'clf__shuffle': [False],
+                    'clf__early_stopping': [True, False]
+                    }]
+        grid_search = GridSearchCV(pipeline,
+                                 param_grid=parameters,
+                                 verbose=1,
+                                 n_jobs=-1,
+                                 cv=TimeSeriesSplit(n_splits=n_splits),
+                                 scoring='roc_auc')
+        grid_search.fit(x, y)
+        grid_search_results = pd.DataFrame(grid_search.cv_results_)
+        pickle.dump(grid_search, open('../picklehistory/'+table_name+'_grid_object_v1.pkl', 'wb'))
+        pickle.dump(grid_search_results, open('../picklehistory/'+table_name+'_grid_results_v1.pkl', 'wb'))
 
 def load_gridsearch(file_name):
     '''
@@ -348,7 +365,7 @@ def pipe_cross_val(n_splits=2):
             print('trained: {} seconds: {:.2f}'.format(key, end-start))
     return prediction_df
 
-def calc_and_print_prediction_returns_pred():
+def calc_and_print_prediction_returns_pred(prediction_df):
     '''
     calculates and prints the returns with the prediction 0 or 1 to trade
     '''
@@ -367,7 +384,7 @@ def calc_and_print_prediction_returns_proba():
 
     pass
 
-def calc_and_print_prediction_stats():
+def calc_and_print_prediction_stats(prediction_df):
     '''
     calculates and prints the prediction stats
     '''
@@ -388,18 +405,36 @@ def calc_and_print_prediction_stats():
         print('confusion matrix: ')
         print(pd.crosstab(y_true, y_pred))
 
-def live_predict():
-    grid_search_res = load_gridsearch('../picklehistory/grid_search_big_object_v1.pkl')
-    model = grid_search_res.best_estimator_
-    data = return_data_table_gt_time('eur_usd_m1', '2017-04-01T00:00:00.000000000Z')
-    df = clean_data(data)
-    df = add_target(df)
-    df = add_features(df)
-    x, y, last_x = split_data_x_y(df)
-    model.fit(x, y)
-    y_pred = model.predict(last_x)
-    y_pred_proba = model.predict_proba(last_x)
-    return y_pred, y_pred_proba
+def live_predict(grid_pickle='../picklehistory/grid_search_big_object_v1.pkl'):
+    '''
+    danger, warning, success based on proba distribution
+    '''
+    count=0
+    while True:
+        table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+        start_time_stamps = ['2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2006-01-01T00:00:00.000000000Z', '2012-01-01T00:00:00.000000000Z', '2017-05-01T00:00:00.000000000Z']
+        grid_search_res = load_gridsearch(grid_pickle)
+        model = grid_search_res.best_estimator_
+        results_df = pd.DataFrame([])
+        for i in range(len(table_names)):
+            data = return_data_table_gt_time(table_names[i], start_time_stamps[i])
+            df = clean_data(data)
+            df = add_target(df)
+            df = add_features(df)
+            x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
+            model.fit(x, y)
+            y_pred = model.predict(last_x_pred)
+            y_pred_proba = model.predict_proba(last_x_pred)
+            last_x_ohlcv.reset_index(inplace=True)
+            last_x_ohlcv['table_name'] = table_names[i]
+            last_x_ohlcv['y_pred'] = y_pred
+            last_x_ohlcv['y_pred'] = last_x_ohlcv['y_pred'].map({1:'Up', 0:'Down'})
+            last_x_ohlcv['y_pred_proba'] = y_pred_proba[:,1]
+            results_df = results_df.append(last_x_ohlcv)
+        pickle.dump(results_df, open('../picklehistory/live_results_df.pkl', 'wb'))
+        count+=1
+        print('completed prediction: {}'.format(count))
+        time.sleep(1)
 
 def plot_compare_scalers():
     '''
@@ -491,51 +526,42 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
     ax.hist(y_pred_proba, bins=100)
     ax.set_title(plot_title)
 
+def all_steps_simple_cross_val():
+    df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
+    print('got data')
+    df = add_target(df)
+    print('added targets')
+    df = add_features(df)
+    print('added features')
+    x, y, last_x_pred, last_x_ohlcv = split_data_x_y()
+    pipes = get_pipelines()
+    print('got pipes')
+    prediction_df = pipe_cross_val(n_splits=2)
+    calc_and_print_prediction_returns_pred(prediction_df)
+    calc_and_print_prediction_stats(prediction_df)
+    proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
+    for pred_col in proba_cols:
+        sp_ind = re.search('_\d_', pred_col).group(0)[1]
+        plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
+    plt.show()
+    return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' or col[:3] == 'log']
+    for return_col in return_cols:
+        plot_prediction_returns(prediction_df[return_col])
+    plt.show()
+    proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
+    for return_col in proba_cols:
+        plot_pred_proba_hist(return_col, prediction_df[return_col])
+    plt.show()
+    plot_compare_scalers()
+    plt.show()
+    plot_dim_2()
+    plt.show()
+    plot_pca_elbow()
+    plt.show()
 
 
 if __name__ == '__main__':
 
-    y_pred, y_pred_proba = live_predict()
 
 
-    # df = get_data('EUR_USD_M1', datetime(2016,1,1), datetime(2016,3,1))
-    # print('got data')
-    # add_target()
-    # print('added targets')
-    # add_features()
-    # print('added features')
-    # x, y = split_data_x_y()
-    # print('starting grid search')
-    # grid_search, grid_search_results = dump_big_gridsearch(n_splits=2)
-    # print('complted gridsearch')
-
-
-    # pipes = get_pipelines()
-    # print('got pipes')
-    # prediction_df = pipe_cross_val(n_splits=2)
-    # calc_and_print_prediction_returns_pred()
-    # calc_and_print_prediction_stats()
-    # proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
-    # for pred_col in proba_cols:
-    #     sp_ind = re.search('_\d_', pred_col).group(0)[1]
-    #     plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
-    # plt.show()
-    #
-    # return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' or col[:3] == 'log']
-    # for return_col in return_cols:
-    #     plot_prediction_returns(prediction_df[return_col])
-    # plt.show()
-    #
-    # proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
-    # for return_col in proba_cols:
-    #     plot_pred_proba_hist(return_col, prediction_df[return_col])
-    # plt.show()
-    #
-    # plot_compare_scalers()
-    # plt.show()
-    #
-    # plot_dim_2()
-    # plt.show()
-    #
-    # plot_pca_elbow()
-    # plt.show()
+    #live_predict()

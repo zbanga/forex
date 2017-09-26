@@ -165,6 +165,37 @@ def get_data_continuous(instru, gran):
                 data = []
         time.sleep(10)
 
+def get_data_continuous_multiple_time_stamps():
+    '''
+    continuously update table with new candles
+    '''
+    accountID = os.environ['oanda_demo_id']
+    access_token = os.environ['oanda_demo_api']
+    client = oandapyV20.API(access_token=access_token)
+    table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+    grans = ['D', 'H12', 'H6', 'H1', 'M30', 'M15', 'M1']
+    instru='EUR_USD'
+    while True:
+        for i in range(len(table_names)):
+            last_timestamp = get_last_timestamp(table_names[i])
+            print('last time stamp in {}: {}'.format(table_names[i], last_timestamp))
+            params = {'price': 'M', 'granularity': grans[i],
+                      'count': 100,
+                      'from': last_timestamp,
+                      'includeFirst': False,
+                      'alignmentTimezone': 'America/New_York'}
+            r = instruments.InstrumentsCandles(instrument=instru,params=params)
+            client.request(r)
+            resp = r.response
+            data = []
+            for can in resp['candles']:
+                if can['complete'] == True and time_in_table(table_names[i], can['time']) == False:
+                    data.append((can['time'], can['volume'], can['mid']['c'], can['mid']['h'], can['mid']['l'], can['mid']['o'], can['complete']))
+                    data_to_table(table_names[i], data)
+                    print('added to {}: {}'.format(table_names[i], data))
+                    data = []
+        time.sleep(1)
+
 def return_data_table(table_name):
     '''
     get all data from table
@@ -216,7 +247,7 @@ def clean_data(data):
 
 if __name__ == '__main__':
 
-    get_data_continuous('EUR_USD', 'M1')
+    get_data_continuous_multiple_time_stamps()
 
     #
     # granularities = ['S5', 'S10', 'S15', 'S30', 'M2', 'M4', 'M5', 'M10', 'M15', 'M30', 'H1', 'H2', 'H3','H4', 'H6', 'H8', 'H12', 'D']

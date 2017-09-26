@@ -53,9 +53,12 @@ def typography():
 def icons():
     return render_template('icons.html')
 
-@app.route('/grid.html')
+@app.route('/liveprediction.html')
 def grid():
-    return render_template('grid.html')
+    columns=['time', 'open', 'high', 'low', 'close', 'volume', 'table_name','y_pred', 'y_pred_proba']
+    data = pick = pickle.load(open('picklehistory/live_results_df.pkl', 'rb'))
+    data = data.values
+    return render_template('liveprediction.html', data=data)
 
 @app.route('/blank.html')
 def blank():
