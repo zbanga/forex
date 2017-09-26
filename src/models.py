@@ -47,6 +47,22 @@ import psycopg2 as pg2
 from sqlalchemy import create_engine
 from oandadatapostgres import return_data_table_gt_time, clean_data
 plt.style.use('ggplot')
+'''
+todo
+
+what is the state of the art?
+what are the technical indicators?
+why scaling?
+why log returns?
+
+feature selection
+
+only trade if proba is standard deviations away
+
+add returns, alpha, beta, sharpe, sortino, max drawdown, volatility
+
+live data pipeline and model prediction
+'''
 
 def get_data(file_name, date_start, date_end):
     '''
@@ -125,15 +141,15 @@ def split_data_x_y(df):
     y = df['target_label_direction_shifted']
     x = df[predict_columns]
     return x, y, last_x
-# =============================================================================
-# def get_momentum():
-#     mom_cols = []
-#     for mom_time in [1, 15, 30, 60, 120]:
-#         col = 'average_log_return_{}_sign'.format(mom_time)
-#         df[col] = df['log_returns'].rolling(mom_time).mean().apply(up_down) #the sign of the average returns of the last x candles
-#         mom_cols.append(col)
-#     return mom_cols
-# =============================================================================
+
+def momentum_columns():
+    mom_cols = []
+    for mom_time in [1, 15, 30, 60, 120]:
+        col = 'average_log_return_{}_sign'.format(mom_time)
+        df[col] = df['log_returns'].rolling(mom_time).mean().apply(up_down) #the sign of the average returns of the last x candles
+        mom_cols.append(col)
+    return mom_cols
+
 def calc_feature_importance():
     '''
     http://scikit-learn.org/stable/modules/feature_selection.html#feature-selection
@@ -192,21 +208,21 @@ def get_pipelines():
     qda = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', QuadraticDiscriminantAnalysis())])
     pipes = {
             'lr': lr
-            #'dtc': dtc,
-            #'rfc': rfc,
-            #'abc': abc,
-            #'gbc': gbc,
-            #'nnm': nnm,
-            #'xgb': xgb,
-            #'mlp': mlp,
-            #'gnb': gnb,
-            #'qda': qda
-            #'svc_r': svc_r,
-            #'svc_l': svc_l,
-            #'svc_p': svc_p,
-            #'svc_s': svc_s,
-            #'knc': knc,
-            #'gpc': gpc
+            'dtc': dtc,
+            'rfc': rfc,
+            'abc': abc,
+            'gbc': gbc,
+            'nnm': nnm,
+            'xgb': xgb,
+            'mlp': mlp,
+            'gnb': gnb,
+            'qda': qda
+            'svc_r': svc_r,
+            'svc_l': svc_l,
+            'svc_p': svc_p,
+            'svc_s': svc_s,
+            'knc': knc,
+            'gpc': gpc
             }
     return pipes
 
@@ -250,51 +266,46 @@ def dump_big_gridsearch(n_splits=2):
     '''
     score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
     pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
-    pca_range = list(range(10,36, 2))
+    pca_range = list(range(10,35, 5))
     parameters = [{
                 'pca__n_components': pca_range,
                 'clf': [MLPClassifier()],
                 'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(50,4),(50,5),(100,1),(100,2),(100,3),(100,4),(100,5)],
                 'clf__activation': ['logistic', 'tanh', 'relu', 'identity'],
-                'clf__alpha': [.000001, .00001, .0001, .001],
+                'clf__alpha': [.000001, .00001, .0001],
                 'clf__batch_size': [200, 500, 1000, 1500, 2000, 3000, 5000],
                 'clf__max_iter': [200, 600, 800, 1000, 2000, 3000, 5000],
                 'clf__shuffle': [False],
                 'clf__early_stopping': [True, False]
                 }]
-            # {
-            # 'pca__n_components': pca_range,
-            # 'clf': [LogisticRegression()],
-            # 'clf__C': [0.1, 0.01, .001],
-            # 'clf__penalty': ['l2', 'l1']},
-            # {
-            # 'pca__n_components': pca_range,
-            # 'clf': [DecisionTreeClassifier()],
-            # 'clf__max_depth': [None, 10, 20, 50]},
-            # {
-            # 'pca__n_components': pca_range,
-            # 'clf': [RandomForestClassifier()],
-            # 'clf__n_estimators': [10, 50, 100]},
-            # {
-            # 'pca__n_components': pca_range,
-            # 'clf': [GradientBoostingClassifier()],
-            # 'clf__n_estimators': [100, 500, 1000],
-            # 'clf__max_depth': [3,5,8]},
-            # {
-            # 'pca__n_components': pca_range,
-            # 'clf': [AdaBoostClassifier()],
-            # 'clf__n_estimators': [100, 500, 1000]},
-            # {
-            # 'pca__n_components': pca_range,
-            # 'clf': [XGBClassifier()],
-            # 'clf__n_estimators': [100, 200, 500, 1000],
-            # 'clf__max_depth': [3,5,8]}]
-# =============================================================================
-#             {
-#             'clf': (KerasClassifier(build_fn=get_nn, num_inputs=20, verbose=0)),
-#             'clf__epochs': [100, 200, 500, 1000],
-#             'clf__batch_size': [200, 500, 1000, 2000]},
-# =============================================================================
+    parameters2 = [
+            {
+            'pca__n_components': pca_range,
+            'clf': [LogisticRegression()],
+            'clf__C': [0.1, 0.01, .001],
+            'clf__penalty': ['l2', 'l1']},
+            {
+            'pca__n_components': pca_range,
+            'clf': [DecisionTreeClassifier()],
+            'clf__max_depth': [None, 10, 20, 50]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [RandomForestClassifier()],
+            'clf__n_estimators': [10, 50, 100]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [GradientBoostingClassifier()],
+            'clf__n_estimators': [100, 500, 1000],
+            'clf__max_depth': [3,5,8]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [AdaBoostClassifier()],
+            'clf__n_estimators': [100, 500, 1000]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [XGBClassifier()],
+            'clf__n_estimators': [100, 200, 500, 1000],
+            'clf__max_depth': [3,5,8]}]
     grid_search = GridSearchCV(pipeline,
                              param_grid=parameters,
                              verbose=1,
@@ -528,38 +539,3 @@ if __name__ == '__main__':
     #
     # plot_pca_elbow()
     # plt.show()
-
-
-    '''
-    todo
-
-    what is the state of the art?
-    what are the technical indicators?
-    why scaling?
-    why log returns?
-
-    feature selection
-
-    only trade if proba is standard deviations away
-
-    add returns, alpha, beta, sharpe, sortino, max drawdown, volatility
-    Classification Metrics
-    ‘accuracy’	metrics.accuracy_score
-    ‘average_precision’	metrics.average_precision_score
-    ‘f1’	metrics.f1_score	for binary targets
-    ‘f1_micro’	metrics.f1_score	micro-averaged
-    ‘f1_macro’	metrics.f1_score	macro-averaged
-    ‘f1_weighted’	metrics.f1_score	weighted average
-    ‘f1_samples’	metrics.f1_score	by multilabel sample
-    ‘neg_log_loss’	metrics.log_loss	requires predict_proba support
-    ‘precision’ etc.	metrics.precision_score	suffixes apply as with ‘f1’
-    ‘recall’ etc.	metrics.recall_score	suffixes apply as with ‘f1’
-    ‘roc_auc’	metrics.roc_auc_score
-
-
-    live data pipeline and model prediction
-
-    '''
-
-
-    pass
