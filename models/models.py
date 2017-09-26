@@ -458,7 +458,7 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
 
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2014,1,1), datetime(2017,8,1))
+    df = get_data('EUR_USD_M1', datetime(2001,1,1), datetime(2017,8,1))
     print('got data')
     add_target()
     print('added targets')
@@ -466,7 +466,7 @@ if __name__ == '__main__':
     print('added features')
     x, y = split_data_x_y()
     print('starting grid search')
-    grid_search, grid_search_results = dump_big_gridsearch(n_splits=3)
+    grid_search, grid_search_results = dump_big_gridsearch(n_splits=2)
     print('complted gridsearch')
 
 
