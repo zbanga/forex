@@ -45,6 +45,7 @@ import sys
 import glob
 import psycopg2 as pg2
 from sqlalchemy import create_engine
+from oandadatapostgres import return_data_table_gt_time, clean_data
 plt.style.use('ggplot')
 
 def get_data(file_name, date_start, date_end):
@@ -69,7 +70,7 @@ def up_down(row):
     else:
         None
 
-def add_target():
+def add_target(df):
     '''
     target is the next candles direction (up/dow) shifted to the current timestamp
     predicting the next direction
@@ -79,8 +80,9 @@ def add_target():
     df['log_returns_shifted'] = np.log(df['close'].shift(-1) / df['close'])
     df['target_label_direction'] = df['log_returns'].apply(up_down)
     df['target_label_direction_shifted'] = df['log_returns_shifted'].apply(up_down)
+    return df
 
-def add_features():
+def add_features(df):
     '''
     technical analysis features
     http://mrjbq7.github.io/ta-lib/doc_index.html
@@ -109,18 +111,20 @@ def add_features():
     for per in [3,6,12,18,24,30]:
         col_name = 'MAVP_'+str(per)
         df[col_name] = talib.MAVP(df['close'].values, periods=np.array([float(per)]*df.shape[0]))
+    return df
 
-def split_data_x_y():
+def split_data_x_y(df):
     '''
     x is only the technical analysis features
     y is only the whether the close of the next candle went up or down
     '''
     drop_columns = ['volume', 'close', 'high', 'low', 'open', 'complete', 'log_returns', 'ari_returns', 'log_returns_shifted', 'target_label_direction', 'target_label_direction_shifted']
     predict_columns = [i for i in df.columns if i not in drop_columns]
+    last_x = df.iloc[-1:][predict_columns]
     df.dropna(inplace=True)
     y = df['target_label_direction_shifted']
     x = df[predict_columns]
-    return x, y
+    return x, y, last_x
 # =============================================================================
 # def get_momentum():
 #     mom_cols = []
@@ -373,13 +377,18 @@ def calc_and_print_prediction_stats():
         print('confusion matrix: ')
         print(pd.crosstab(y_true, y_pred))
 
-def livepredict():
+def live_predict():
     grid_search_res = load_gridsearch('../picklehistory/grid_search_big_object_v1.pkl')
-    model = grid_search.best_estimator_
-    data = return_data_table_gt_time('eur_usd_m1', '2017-09-26T15:41:00.000000000Z')
-
-
-    print(data)
+    model = grid_search_res.best_estimator_
+    data = return_data_table_gt_time('eur_usd_m1', '2017-04-01T00:00:00.000000000Z')
+    df = clean_data(data)
+    df = add_target(df)
+    df = add_features(df)
+    x, y, last_x = split_data_x_y(df)
+    model.fit(x, y)
+    y_pred = model.predict(last_x)
+    y_pred_proba = model.predict_proba(last_x)
+    return y_pred, y_pred_proba
 
 def plot_compare_scalers():
     '''
@@ -474,16 +483,20 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
 
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2016,1,1), datetime(2016,3,1))
-    print('got data')
-    add_target()
-    print('added targets')
-    add_features()
-    print('added features')
-    x, y = split_data_x_y()
-    print('starting grid search')
-    grid_search, grid_search_results = dump_big_gridsearch(n_splits=2)
-    print('complted gridsearch')
+
+    y_pred, y_pred_proba = live_predict()
+
+
+    # df = get_data('EUR_USD_M1', datetime(2016,1,1), datetime(2016,3,1))
+    # print('got data')
+    # add_target()
+    # print('added targets')
+    # add_features()
+    # print('added features')
+    # x, y = split_data_x_y()
+    # print('starting grid search')
+    # grid_search, grid_search_results = dump_big_gridsearch(n_splits=2)
+    # print('complted gridsearch')
 
 
     # pipes = get_pipelines()

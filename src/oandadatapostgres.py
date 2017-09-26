@@ -202,12 +202,13 @@ def clean_data(data):
     columns=['time', 'volume', 'close', 'high', 'low', 'open', 'complete']
     df = pd.DataFrame(data, columns=columns)
     df['time'] = pd.to_datetime(df['time'], utc=True)
-    df['volume'] = df.volume.astype(int)
+    df['volume'] = df.volume.astype(float)
     df['close'] = df.close.astype(float)
     df['high'] = df.high.astype(float)
     df['low'] = df.low.astype(float)
     df['open'] = df.open.astype(float)
-    df['complete'] = df.complete.astype(bool)
+    df.set_index('time', inplace=True)
+    df.drop('complete', axis=1, inplace=True)
     return df
 
 
