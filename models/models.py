@@ -203,7 +203,7 @@ def gridsearch_score_returns(y_true, y_pred):
     gridsearch scoring function that returns cumulative returns
     '''
     prediction_df = pd.DataFrame([])
-    prediction_df['log_returns'] = df['log_returns'][y_true.index]
+    prediction_df['log_returns'] = df.loc[y_true.index, 'log_returns']
     prediction_df['y_pred'] = y_pred
     score = (np.exp(np.sum(prediction_df['y_pred'].map({1:1, 0:-1}).shift(1) * prediction_df['log_returns']))-1)*100
     print('{:.2f}%'.format(score))
@@ -247,7 +247,7 @@ def dump_big_gridsearch(n_splits=2):
                 'clf__alpha': [.000001, .00001, .0001, .001],
                 'clf__batch_size': [200, 500, 1000, 1500, 2000, 3000, 5000],
                 'clf__max_iter': [200, 600, 800, 1000, 2000, 3000, 5000],
-                'clf__shuffle': [True, False],
+                'clf__shuffle': [False],
                 'clf__early_stopping': [True, False]
                 }]
             # {
@@ -288,7 +288,7 @@ def dump_big_gridsearch(n_splits=2):
                              verbose=2,
                              n_jobs=-1,
                              cv=TimeSeriesSplit(n_splits=n_splits),
-                             scoring=score_returns)
+                             scoring='roc_auc')
     grid_search.fit(x, y)
     grid_search_results = pd.DataFrame(grid_search.cv_results_)
     pickle.dump(grid_search, open('grid_search_big_object.pkl', 'wb'))
@@ -458,7 +458,7 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
 
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2007,1,1), datetime(2016,8,1))
+    df = get_data('EUR_USD_M1', datetime(2014,1,1), datetime(2017,8,1))
     print('got data')
     add_target()
     print('added targets')
@@ -466,7 +466,7 @@ if __name__ == '__main__':
     print('added features')
     x, y = split_data_x_y()
     print('starting grid search')
-    grid_search, grid_search_results = dump_big_gridsearch(n_splits=10)
+    grid_search, grid_search_results = dump_big_gridsearch(n_splits=3)
     print('complted gridsearch')
 
 

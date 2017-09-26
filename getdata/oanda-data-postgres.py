@@ -98,7 +98,7 @@ def time_in_table(table_name, time_stamp):
     conn.close()
     return data[0][0]
 
-def get_data(instru, gran, last_timestamp = '2005-01-01T00:00:00.000000000Z'):
+def get_data(instru, gran, last_timestamp = '2000-01-01T00:00:00.000000000Z'):
     '''
     get initial data to databse from 2005 to today
     '''
@@ -144,6 +144,7 @@ def get_data_continuous(instru, gran):
     table_name = instru.lower()+'_'+gran.lower()
     while True:
         last_timestamp = get_last_timestamp(table_name)
+        print(last_timestamp)
         params = {'price': 'M', 'granularity': gran,
                   'count': 5000,
                   'from': last_timestamp,
@@ -196,12 +197,13 @@ def clean_data(data):
 
 
 if __name__ == '__main__':
-    # granularities = ['S5', 'S10', 'S15', 'S30', 'M1', 'M2', 'M4', 'M5', 'M10', 'M15', 'M30', 'H1', 'H2', 'H3','H4', 'H6', 'H8', 'H12', 'D']
-    #
-    # add_table('eur_usd_d')
-    # get_data(instru='EUR_USD', gran='D')
-    get_data_continuous('EUR_USD', 'D')
-
+    granularities = ['S5', 'S10', 'S15', 'S30', 'M2', 'M4', 'M5', 'M10', 'M15', 'M30', 'H1', 'H2', 'H3','H4', 'H6', 'H8', 'H12', 'D']
+    granularities = granularities[::-1]
+    for gran in granularities:
+        print(gran)
+        add_table('EUR_USD_'+gran)
+        get_data(instru='EUR_USD', gran=gran)
+    # get_data_continuous('EUR_USD', 'D')
 
 
 
