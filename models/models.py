@@ -210,6 +210,9 @@ def gridsearch_score_returns(y_true, y_pred):
     return score
 
 def gridsearch_pipe(n_splits=2):
+    '''
+    grid search a single pipe and return gridsearch and results
+    '''
     score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
     pca_range = list(range(4,14,2))
     param_grid = {
@@ -230,42 +233,53 @@ def gridsearch_pipe(n_splits=2):
     return grid_search, grid_search_results
 
 def dump_big_gridsearch(n_splits=2):
+    '''
+    grid search every model and return gridsearch and results
+    '''
     score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
     pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
-    pca_range = list(range(8,30, 2))
+    pca_range = list(range(6,36, 2))
     parameters = [{
-            'pca__n_components': pca_range,
-            'clf': [LogisticRegression()],
-            'clf__C': [0.1, 0.01, .001],
-            'clf__penalty': ['l2', 'l1']},
-            {
-            'pca__n_components': pca_range,
-            'clf': [DecisionTreeClassifier()],
-            'clf__max_depth': [None, 10, 20, 50]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [RandomForestClassifier()],
-            'clf__n_estimators': [10, 50, 100]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [GradientBoostingClassifier()],
-            'clf__n_estimators': [100, 500, 1000],
-            'clf__max_depth': [3,5,8]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [AdaBoostClassifier()],
-            'clf__n_estimators': [100, 500, 1000]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [XGBClassifier()],
-            'clf__n_estimators': [100, 200, 500, 1000],
-            'clf__max_depth': [3,5,8]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [MLPClassifier()],
-            'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(100,1),(100,2),(100,3)],
-            'clf__activation': ['logistic', 'tanh', 'relu'],
-            'clf__alpha': [.00001, .0001, .001]}]
+                'pca__n_components': pca_range,
+                'clf': [MLPClassifier()],
+                'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(50,4),(50,5),(100,1),(100,2),(100,3),(100,4),(100,5)],
+                'clf__activation': ['logistic', 'tanh', 'relu', 'identity'],
+                'clf__alpha': [.000001, .00001, .0001, .001],
+                'clf__batch_size': [200, 500, 1000, 1500, 2000, 3000, 5000],
+                'clf__max_iter': [200, 600, 800, 1000, 2000, 3000, 5000],
+                'clf__shuffle': [True, False],
+                'clf__beta_1': [.7, .8, .9],
+                'clf__beta_2': [.99, .999, .9999],
+                'clf__epsilon': [1e7, 1e8, 1e9],
+                'clf__early_stopping': [True, False]
+                }]
+            # {
+            # 'pca__n_components': pca_range,
+            # 'clf': [LogisticRegression()],
+            # 'clf__C': [0.1, 0.01, .001],
+            # 'clf__penalty': ['l2', 'l1']},
+            # {
+            # 'pca__n_components': pca_range,
+            # 'clf': [DecisionTreeClassifier()],
+            # 'clf__max_depth': [None, 10, 20, 50]},
+            # {
+            # 'pca__n_components': pca_range,
+            # 'clf': [RandomForestClassifier()],
+            # 'clf__n_estimators': [10, 50, 100]},
+            # {
+            # 'pca__n_components': pca_range,
+            # 'clf': [GradientBoostingClassifier()],
+            # 'clf__n_estimators': [100, 500, 1000],
+            # 'clf__max_depth': [3,5,8]},
+            # {
+            # 'pca__n_components': pca_range,
+            # 'clf': [AdaBoostClassifier()],
+            # 'clf__n_estimators': [100, 500, 1000]},
+            # {
+            # 'pca__n_components': pca_range,
+            # 'clf': [XGBClassifier()],
+            # 'clf__n_estimators': [100, 200, 500, 1000],
+            # 'clf__max_depth': [3,5,8]}]
 # =============================================================================
 #             {
 #             'clf': (KerasClassifier(build_fn=get_nn, num_inputs=20, verbose=0)),
@@ -288,8 +302,8 @@ def load_gridsearch(file_name):
     '''
     load pickled gridsearched model
     '''
-    model = pickle.load(open(file_name, 'rb'))
-    return model
+    pick = pickle.load(open(file_name, 'rb'))
+    return pick
 
 def pipe_cross_val(n_splits=2):
     '''
@@ -345,7 +359,7 @@ def calc_and_print_prediction_stats():
         print('\n', pred_col)
         up = sum(y_true==1) / len(y_true) *100
         print('up: {:.2f}%'.format(up))
-        print('down: {:.2f}%'.format(1-up))
+        print('down: {:.2f}%'.format(100-up))
         print('accuracy: {:.2f}%'.format(accuracy_score(y_true, y_pred)*100))
         y_true = pd.Series(y_true, name='Actual')
         y_pred = pd.Series(y_pred, name='Predicted')
@@ -396,7 +410,7 @@ def plot_dim_2():
     plot 2 pca features
     '''
     pca = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=2))])
-    tsne = Pipeline([('scale',StandardScaler()), ('tsne', TSNE(n_components=2))])
+    tsne = Pipeline([('scale',StandardScaler()), ('tsne', TSNE(n_components=2, verbose=3))])
     dim_red = [pca, tsne]
     fig, axes = plt.subplots(2, 1)
     for i, ax in enumerate(axes.reshape(-1)):
@@ -447,55 +461,47 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
 
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2017,1,1), datetime(2018,1,1))
+    df = get_data('EUR_USD_M1', datetime(2002,1,1), datetime(2018,1,1))
     print('got data')
     add_target()
     print('added targets')
     add_features()
     print('added features')
     x, y = split_data_x_y()
-    pipes = get_pipelines()
-    print('got pipes')
-    # grid_search, grid_search_results = dump_big_gridsearch(3)
-    # print('complted gridsearch')
-    # pipes = {'grid': grid_search.best_estimator_}
-    prediction_df = pipe_cross_val(n_splits=2)
-    print('cross val pipe')
-    calc_and_print_prediction_returns_pred()
-    calc_and_print_prediction_stats()
+    print('starting grid search')
+    grid_search, grid_search_results = dump_big_gridsearch(n_splits=10)
+    print('complted gridsearch')
 
-    plot_dim_2()
-    plt.show()
 
-# =============================================================================
-#     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
-#     for pred_col in proba_cols:
-#         sp_ind = re.search('_\d_', pred_col).group(0)[1]
-#         plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
-#     plt.show()
-#
-#     return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' or col[:3] == 'log']
-#     for return_col in return_cols:
-#         plot_prediction_returns(prediction_df[return_col])
-#     plt.show()
-#
-#     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
-#     for return_col in proba_cols:
-#         plot_pred_proba_hist(return_col, prediction_df[return_col])
-#     plt.show()
-# =============================================================================
-
-# =============================================================================
-#     plot_compare_scalers()
-#     plt.show()
-#
-#     plot_pca_2()
-#     plt.show()
-#
-#     plot_pca_elbow()
-#     plt.show()
-#
-# =============================================================================
+    # pipes = get_pipelines()
+    # print('got pipes')
+    # prediction_df = pipe_cross_val(n_splits=2)
+    # calc_and_print_prediction_returns_pred()
+    # calc_and_print_prediction_stats()
+    # proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
+    # for pred_col in proba_cols:
+    #     sp_ind = re.search('_\d_', pred_col).group(0)[1]
+    #     plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
+    # plt.show()
+    #
+    # return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' or col[:3] == 'log']
+    # for return_col in return_cols:
+    #     plot_prediction_returns(prediction_df[return_col])
+    # plt.show()
+    #
+    # proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
+    # for return_col in proba_cols:
+    #     plot_pred_proba_hist(return_col, prediction_df[return_col])
+    # plt.show()
+    #
+    # plot_compare_scalers()
+    # plt.show()
+    #
+    # plot_dim_2()
+    # plt.show()
+    #
+    # plot_pca_elbow()
+    # plt.show()
 
 
     '''
@@ -506,9 +512,7 @@ if __name__ == '__main__':
     why scaling?
     why log returns?
 
-    add nmf, t-sne, lda?
-
-    gridsearch feature selection, feature reduction, models, customize scoring
+    feature selection
 
     only trade if proba is standard deviations away
 
