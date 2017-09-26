@@ -238,7 +238,7 @@ def dump_big_gridsearch(n_splits=2):
     '''
     score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
     pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
-    pca_range = list(range(6,36, 2))
+    pca_range = list(range(10,36, 2))
     parameters = [{
                 'pca__n_components': pca_range,
                 'clf': [MLPClassifier()],
@@ -248,9 +248,6 @@ def dump_big_gridsearch(n_splits=2):
                 'clf__batch_size': [200, 500, 1000, 1500, 2000, 3000, 5000],
                 'clf__max_iter': [200, 600, 800, 1000, 2000, 3000, 5000],
                 'clf__shuffle': [True, False],
-                'clf__beta_1': [.7, .8, .9],
-                'clf__beta_2': [.99, .999, .9999],
-                'clf__epsilon': [1e7, 1e8, 1e9],
                 'clf__early_stopping': [True, False]
                 }]
             # {
@@ -461,7 +458,7 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
 
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2002,1,1), datetime(2018,1,1))
+    df = get_data('EUR_USD_M1', datetime(2007,1,1), datetime(2016,8,1))
     print('got data')
     add_target()
     print('added targets')
