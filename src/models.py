@@ -37,6 +37,14 @@ import gc
 import operator
 import time
 import pickle
+import matplotlib.pyplot as plt
+import oandapyV20
+import oandapyV20.endpoints.instruments as instruments
+import os
+import sys
+import glob
+import psycopg2 as pg2
+from sqlalchemy import create_engine
 plt.style.use('ggplot')
 
 def get_data(file_name, date_start, date_end):
@@ -285,7 +293,7 @@ def dump_big_gridsearch(n_splits=2):
 # =============================================================================
     grid_search = GridSearchCV(pipeline,
                              param_grid=parameters,
-                             verbose=2,
+                             verbose=1,
                              n_jobs=-1,
                              cv=TimeSeriesSplit(n_splits=n_splits),
                              scoring='roc_auc')
@@ -364,6 +372,14 @@ def calc_and_print_prediction_stats():
         print(classification_report(y_true, y_pred))
         print('confusion matrix: ')
         print(pd.crosstab(y_true, y_pred))
+
+def livepredict():
+    grid_search_res = load_gridsearch('../picklehistory/grid_search_big_object_v1.pkl')
+    model = grid_search.best_estimator_
+    data = return_data_table_gt_time('eur_usd_m1', '2017-09-26T15:41:00.000000000Z')
+
+
+    print(data)
 
 def plot_compare_scalers():
     '''
@@ -458,7 +474,7 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
 
 
 if __name__ == '__main__':
-    df = get_data('EUR_USD_M1', datetime(2001,1,1), datetime(2017,8,1))
+    df = get_data('EUR_USD_M1', datetime(2016,1,1), datetime(2016,3,1))
     print('got data')
     add_target()
     print('added targets')
