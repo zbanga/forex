@@ -11,7 +11,7 @@ Web App: link
 3. [Features](#features)
 4. [Modeling](#modeling)
 5. [Results](#results)
-6. [Web Application](#web application)
+6. [Web Application](#web-application)
 7. [Resources](#resources)
 
 # Data
@@ -171,6 +171,10 @@ Use PCA to reduce the dimensions and solve for the curse of dimensionality and t
 
 Use these tools in a pipeline to prevent data leakage and allow for gridsearching.
 
+![alttext](/imgs/PCA.png "PCA")
+
+![alttext](/imgs/PCA2.png "PCA")
+
 Future Opportunities: Try other dimensionality reduction algorithms (t-sne) and other feature selection methods.
 
 # Modeling
@@ -186,6 +190,10 @@ Future Opportunities: Optomize the gridsearch scoring function to incorporate ot
 
 Look are predicted probability by models
 Calculate the returns and the classification metrics including a confusion matrix, accuracy, precision, recall, roc curve.
+
+![alttext](/imgs/BADROC.png "Bad ROC")
+
+![alttext](/imgs/calcreturns.png "Bad ROC")
 
 Future Opportunities: Tune a trading strategy based upon probabilities. Use a proper backtesting library incorporating bid / ask spreads, trading fees.
 
