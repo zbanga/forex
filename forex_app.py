@@ -9,6 +9,13 @@ import pandas as pd
 import numpy as np
 from src.oandadatapostgres import return_data_table_gt_time
 
+'''
+SSH 22
+HTTP 80
+Custom TCP Rule 8080
+RabitMQ
+'''
+
 app = Flask(__name__)
 
 @app.route('/index.html')

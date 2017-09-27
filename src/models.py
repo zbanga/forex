@@ -55,13 +55,12 @@ what are the technical indicators?
 why scaling?
 why log returns?
 
-feature selection
-
 only trade if proba is standard deviations away
-
+feature selection
+only trade if proba is standard deviations away
 add returns, alpha, beta, sharpe, sortino, max drawdown, volatility
-
 live data pipeline and model prediction
+website tradingview apps
 '''
 
 def get_data(file_name, date_start, date_end):
@@ -290,7 +289,7 @@ def store_grid_params():
             'pca__n_components': pca_range,
             'clf': [XGBClassifier()],
             'clf__n_estimators': [100, 200, 500, 1000],
-            'clf__max_depth': [3,5,8]}]
+            'clf__max_depth': [3,5,8,10]}]
     return parameters2
 
 def dump_big_gridsearch(n_splits=2):
@@ -315,15 +314,9 @@ def dump_big_gridsearch(n_splits=2):
         pca_range = list(range(15,35, 5))
         parameters = [{
                     'pca__n_components': pca_range,
-                    'clf': [MLPClassifier()],
-                    'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(100,1),(100,2),(100,3)],
-                    'clf__activation': ['logistic', 'tanh', 'relu', 'identity'],
-                    'clf__alpha': [.000001, .00001, .0001],
-                    'clf__batch_size': [200, 500, 800],
-                    'clf__max_iter': [2000, 3000, 5000],
-                    'clf__shuffle': [False],
-                    'clf__early_stopping': [True]
-                    }]
+                    'clf': [XGBClassifier()],
+                    'clf__n_estimators': [100, 200, 500, 1000],
+                    'clf__max_depth': [3,5,8,10]}]
         grid_search = GridSearchCV(pipeline,
                                  param_grid=parameters,
                                  verbose=1,
@@ -332,8 +325,8 @@ def dump_big_gridsearch(n_splits=2):
                                  scoring='roc_auc')
         grid_search.fit(x, y)
         grid_search_results = pd.DataFrame(grid_search.cv_results_)
-        pickle.dump(grid_search, open('../picklehistory/'+table_name+'_grid_object_v1.pkl', 'wb'))
-        pickle.dump(grid_search_results, open('../picklehistory/'+table_name+'_grid_results_v1.pkl', 'wb'))
+        pickle.dump(grid_search, open('../picklehistory/'+table_name+'_grid_xg_object_v1.pkl', 'wb'))
+        pickle.dump(grid_search_results, open('../picklehistory/'+table_name+'_grid_xg_results_v1.pkl', 'wb'))
 
 def load_gridsearch(file_name):
     '''
