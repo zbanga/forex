@@ -300,7 +300,7 @@ def dump_big_gridsearch(n_splits=2):
     table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
     start_time_stamps = [datetime(2000,1,1), datetime(2000,1,1), datetime(2000,1,1), datetime(2000,1,1), datetime(2006,1,1), datetime(2012,1,1), datetime(2017,5,1)]
     for i in range(len(table_names)):
-        table = table_names[i]
+        table_name = table_names[i].upper()
         from_time = start_time_stamps[i]
         df = get_data(table_name, from_time, datetime(2018,1,1))
         print('got data')
@@ -308,21 +308,21 @@ def dump_big_gridsearch(n_splits=2):
         print('added targets')
         df = add_features(df)
         print('added features')
-        x, y, last_x_pred, last_x_ohlcv = split_data_x_y()
+        x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
         print('starting grid search')
         score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
         pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
-        pca_range = list(range(10,35, 5))
+        pca_range = list(range(15,35, 5))
         parameters = [{
                     'pca__n_components': pca_range,
                     'clf': [MLPClassifier()],
-                    'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(50,4),(50,5),(100,1),(100,2),(100,3),(100,4),(100,5)],
+                    'clf__hidden_layer_sizes': [(50,1),(50,2),(50,3),(100,1),(100,2),(100,3)],
                     'clf__activation': ['logistic', 'tanh', 'relu', 'identity'],
                     'clf__alpha': [.000001, .00001, .0001],
-                    'clf__batch_size': [200, 500, 1000, 1500, 2000, 3000, 5000],
-                    'clf__max_iter': [200, 600, 800, 1000, 2000, 3000, 5000],
+                    'clf__batch_size': [200, 500, 800],
+                    'clf__max_iter': [2000, 3000, 5000],
                     'clf__shuffle': [False],
-                    'clf__early_stopping': [True, False]
+                    'clf__early_stopping': [True]
                     }]
         grid_search = GridSearchCV(pipeline,
                                  param_grid=parameters,
@@ -561,7 +561,4 @@ def all_steps_simple_cross_val():
 
 
 if __name__ == '__main__':
-
-
-
-    #live_predict()
+    dump_big_gridsearch()
