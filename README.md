@@ -1,10 +1,10 @@
 
 
-# Acquire Data
+# Get Data
 
 *Still* | `renders` | **nicely**
 
-I used the Oanda API to download historical EUR_USD exchange prices to a PostgreSQL database. The API only allows you to receive 5,000 records per request so I setup a script to download this information overnight. The database contains tables with the exchange price every 5 seconds, 10 seconds, 15 seconds, etc. as shown by the table below.
+I used the Oanda API to download historical EUR_USD candles to a PostgreSQL database. The data contains the volume, open, high, low, close mid prices (between bid / ask prices). The API only allows you to receive 5,000 records per request so I setup a script to download this information overnight. The database contains tables with the exchange price every 5 seconds, 10 seconds, 15 seconds, etc. from 2005 to today as shown by the table below.
 
 Granularity | Description
 --- | ---
@@ -44,71 +44,149 @@ time | volume | open | high | low | close | complete
 2005-01-02 20:54:00 | 8 | 1.355500 | 1.355500 | 1.354100 | 1.354100 | True
 2005-01-02 20:55:00 | 2 | 1.354100 | 1.355000 | 1.354100 | 1.355000 | True
 
-![alttext](/imgs/forexline.png "Forex Line")
+![alttext](/imgs/forexline.png "Forex Close")
 
+![alttext](/imgs/forexvolumeline.png "Forex Volume")
 
-<!-- TradingView Widget BEGIN -->
-<div id="tv-medium-widget-64ec8"></div>
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-<script type="text/javascript">
-new TradingView.MediumWidget({
-  "container_id": "tv-medium-widget-64ec8",
-  "symbols": [
-    [
-      "EUR_USD",
-      "OANDA:EURUSD|1d"
-    ]
-  ],
-  "gridLineColor": "#e9e9ea",
-  "fontColor": "#83888D",
-  "underLineColor": "#dbeffb",
-  "trendLineColor": "#4bafe9",
-  "width": "1000px",
-  "height": "400px",
-  "locale": "en"
-});
-</script>
-<!-- TradingView Widget END -->
+![alttext](/imgs/1monthcandles.png "Forex Candles")
 
 http://developer.oanda.com/rest-live-v20/introduction/
 
+Future Opportunities: Incorporate more data, economic calendar, historical position ratios, bid ask spreads, commitments of traders, orderbook...
+
 # Create Target
 
+I am using a classification target (1 or 0) of whether or not the close price of the next candle is higher or lower than the close price of the current candle. I also calculated the log returns log(close n+1 / close n) to be used for calculating returns.
 
+time| volume | open | high | low | close | complete | log_returns | log_returns_shifted | target_label_direction_shifted
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+2016-04-01 00:00:00 | 29 | 1.137860 | 1.137960 | 1.137680 | 1.137920 | True | nan | 0.000097 | 1
+2016-04-01 00:01:00 | 16 | 1.137880 | 1.138030 | 1.137800 | 1.138030 | True | 0.000097 | 0.000132 | 1
+2016-04-01 00:02:00 | 11 | 1.138060 | 1.138210 | 1.138040 | 1.138180 | True | 0.000132 | 0.000000 | 1
+2016-04-01 00:03:00 | 15 | 1.138160 | 1.138230 | 1.138130 | 1.138180 | True | 0.000000 | 0.000000 | 1
+2016-04-01 00:04:00 | 8 | 1.138180 | 1.138200 | 1.138140 | 1.138180 | True | 0.000000 | 0.000123 | 1
+2016-04-01 00:05:00 | 4 | 1.138220 | 1.138320 | 1.138220 | 1.138320 | True | 0.000123 | -0.000018 | 0
+2016-04-01 00:06:00 | 14 | 1.138280 | 1.138300 | 1.138220 | 1.138300 | True | -0.000018 | -0.000018 | 0
+2016-04-01 00:07:00 | 10 | 1.138340 | 1.138340 | 1.138270 | 1.138280 | True | -0.000018 | 0.000325 | 1
+2016-04-01 00:08:00 | 42 | 1.138320 | 1.138720 | 1.138320 | 1.138650 | True | 0.000325 | 0.000026 | 1
+2016-04-01 00:09:00 | 12 | 1.138620 | 1.138720 | 1.138620 | 1.138680 | True | 0.000026 | -0.000123 | 0
 
+![alttext](/imgs/returns.png "Forex Returns")
+
+Future Opportunities: Incorporate regression not just classification.
 
 # Add Features
 
+Below are the technical analysis features that were added to the data.
 
+| Group | Short Name | Name |
+|-----------------------|---------------------|---------------------------------------------------|
+| Momentum Indicators | ADX | Average Directional Movement Index |
+| Momentum Indicators | ADXR | Average Directional Movement Index Rating |
+| Momentum Indicators | APO | Absolute Price Oscillator |
+| Momentum Indicators | AROON | Aroon |
+| Momentum Indicators | AROONOSC | Aroon Oscillator |
+| Momentum Indicators | BOP | Balance Of Power |
+| Momentum Indicators | CCI | Commodity Channel Index |
+| Momentum Indicators | CMO | Chande Momentum Oscillator |
+| Momentum Indicators | DX | Directional Movement Index |
+| Momentum Indicators | MACD | Moving Average Convergence/Divergence |
+| Momentum Indicators | MACDEXT | MACD with controllable MA type |
+| Momentum Indicators | MACDFIX | Moving Average Convergence/Divergence Fix 12/26 |
+| Momentum Indicators | MFI | Money Flow Index |
+| Momentum Indicators | MINUS_DI | Minus Directional Indicator |
+| Momentum Indicators | MINUS_DM | Minus Directional Movement |
+| Momentum Indicators | MOM | Momentum |
+| Momentum Indicators | PLUS_DI | Plus Directional Indicator |
+| Momentum Indicators | PLUS_DM | Plus Directional Movement |
+| Momentum Indicators | PPO | Percentage Price Oscillator |
+| Momentum Indicators | ROC | Rate of change : ((price/prevPrice)-1)*100 |
+| Momentum Indicators | ROCP | Rate of change Percentage: (price-prevPrice)/p... |
+| Momentum Indicators | ROCR | Rate of change ratio: (price/prevPrice) |
+| Momentum Indicators | ROCR100 | Rate of change ratio 100 scale: (price/prevPri... |
+| Momentum Indicators | RSI | Relative Strength Index |
+| Momentum Indicators | STOCH | Stochastic |
+| Momentum Indicators | STOCHF | Stochastic Fast |
+| Momentum Indicators | STOCHRSI | Stochastic Relative Strength Index |
+| Momentum Indicators | TRIX | 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA |
+| Momentum Indicators | ULTOSC | Ultimate Oscillator |
+| Momentum Indicators | WILLR | Williams' %R |
+| Overlap Studies | BBANDS | Bollinger Bands |
+| Overlap Studies | DEMA | Double Exponential Moving Average |
+| Overlap Studies | EMA | Exponential Moving Average |
+| Overlap Studies | HT_TRENDLINE | Hilbert Transform - Instantaneous Trendline |
+| Overlap Studies | KAMA | Kaufman Adaptive Moving Average |
+| Overlap Studies | MA | Moving average |
+| Overlap Studies | MAMA | MESA Adaptive Moving Average |
+| Overlap Studies | MIDPOINT | MidPoint over period |
+| Overlap Studies | MIDPRICE | Midpoint Price over period |
+| Overlap Studies | SAR | Parabolic SAR |
+| Overlap Studies | SAREXT | Parabolic SAR - Extended |
+| Overlap Studies | SMA | Simple Moving Average |
+| Overlap Studies | T3 | Triple Exponential Moving Average (T3) |
+| Overlap Studies | TEMA | Triple Exponential Moving Average |
+| Overlap Studies | TRIMA | Triangular Moving Average |
+| Overlap Studies | WMA | Weighted Moving Average |
+| Volume Indicators | AD | Chaikin A/D Line |
+| Volume Indicators | ADOSC | Chaikin A/D Oscillator |
+| Volume Indicators | OBV | On Balance Volume |
+| Cycle Indicators | HT_DCPERIOD | Hilbert Transform - Dominant Cycle Period |
+| Cycle Indicators | HT_DCPHASE | Hilbert Transform - Dominant Cycle Phase |
+| Cycle Indicators | HT_PHASOR | Hilbert Transform - Phasor Components |
+| Cycle Indicators | HT_SINE | Hilbert Transform - SineWave |
+| Cycle Indicators | HT_TRENDMODE | Hilbert Transform - Trend vs Cycle Mode |
+| Volatility Indicators | ATR | Average True Range |
+| Volatility Indicators | NATR | Normalized Average True Range |
+| Volatility Indicators | TRANGE | True Range |
+| Statistic Functions | BETA | Beta |
+| Statistic Functions | CORREL | Pearson's Correlation Coefficient (r) |
+| Statistic Functions | LINEARREG | Linear Regression |
+| Statistic Functions | LINEARREG_ANGLE | Linear Regression Angle |
+| Statistic Functions | LINEARREG_INTERCEPT | Linear Regression Intercept |
+| Statistic Functions | LINEARREG_SLOPE | Linear Regression Slope |
+| Statistic Functions | STDDEV | Standard Deviation |
+| Statistic Functions | TSF | Time Series Forecast |
+| Statistic Functions | VAR | Variance |
 
+https://mrjbq7.github.io/ta-lib/funcs.html
 
+Future Opportunities: More technical indicators with varying parameters.
 
 # Exploratory Analysis
 
+Feature importances with SelectKBest
+LogisticRegresssion and Regularization with the L1 Lasso at different rates to see which features survive!
+Tree Based selection can be used to see which features give the model the highest information gain.
+Use PCA to reduce the dimensions and solve for the curse of dimensionality and the colinearity between the features.
 
+Use these tools in a pipeline to prevent data leakage and allow for gridsearching.
 
+Future Opportunities: Try other dimensionality reduction algorithms (t-sne) and other feature selection methods.
 
 # Model and Gridsearch
 
+Gridsearch Cross Validate (Train / Test Split) each pipeline with a variety of parameters for each for each candle granularity and take the model with the highest score.
+Customized the gridsearch scoring function to maximize returns.
 
-
+Future Opportunities: Optomize the gridsearch scoring function to incorporate other financial metrics including alpha, beta, max drawdown, etc.
 
 # Analyze Results
 
+Look are predicted probability by models
+Calculate the returns and the classification metrics including a confusion matrix, accuracy, precision, recall, roc curve.
 
-
-
-
+Future Opportunities: Tune a trading strategy based upon probabilities. Use a proper backtesting library incorporating bid / ask spreads, trading fees.
 
 # Share Results
 
-Live data pipeline
+Continuously update database with live candles.
+Continuously fit gridsearched models and predict the future direction for each candle granularity.
+Display results in table with tradingview widgets below.
+
+LINK TO WEBSITE HERE
 
 
-
-
-
-forex
+# Forex Resources
 
 * get data
   * oanda restful api
@@ -125,6 +203,7 @@ forex
 * target
   * sign of (next candle open price - current candle open price)
   * future open price
+  * http://www.dcfnerds.com/94/arithmetic-vs-logarithmic-rates-of-return/
 * features
   * exponential smoothing
   * log returns
