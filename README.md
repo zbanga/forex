@@ -1,8 +1,20 @@
 
+# EUR/USD Foreign Exchange Rate Prediction
 
-# Get Data
+Using neural networks and boosted trees to predict the direction of of the EUR/USD foreign exchange rates.
 
-*Still* | `renders` | **nicely**
+Web App: link
+
+## Table of Contents
+1. [Data](#data)
+2. [Target](#target)
+3. [Features](#features)
+4. [Modeling](#modeling)
+5. [Results](#results)
+6. [Web Application](#web application)
+7. [Resources](#resources)
+
+# Data
 
 I used the Oanda API to download historical EUR_USD candles to a PostgreSQL database. The data contains the volume, open, high, low, close mid prices (between bid / ask prices). The API only allows you to receive 5,000 records per request so I setup a script to download this information overnight. The database contains tables with the exchange price every 5 seconds, 10 seconds, 15 seconds, etc. from 2005 to today as shown by the table below.
 
@@ -44,38 +56,36 @@ time | volume | open | high | low | close | complete
 2005-01-02 20:54:00 | 8 | 1.355500 | 1.355500 | 1.354100 | 1.354100 | True
 2005-01-02 20:55:00 | 2 | 1.354100 | 1.355000 | 1.354100 | 1.355000 | True
 
-![alttext](/imgs/forexline.png "Forex Close")
-
-![alttext](/imgs/forexvolumeline.png "Forex Volume")
-
+### 1 Month Candles with Volume
 ![alttext](/imgs/1monthcandles.png "Forex Candles")
 
 http://developer.oanda.com/rest-live-v20/introduction/
 
 Future Opportunities: Incorporate more data, economic calendar, historical position ratios, bid ask spreads, commitments of traders, orderbook...
 
-# Create Target
+# Target
 
 I am using a classification target (1 or 0) of whether or not the close price of the next candle is higher or lower than the close price of the current candle. I also calculated the log returns log(close n+1 / close n) to be used for calculating returns.
 
 | time | volume | open | high | low | close | log_returns | log_returns_shifted | target |
 |---------------------|--------|----------|----------|----------|----------|-------------|---------------------|--------|
-| 2016-04-01 00:00:00 | 29 | 1.137860 | 1.137960 | 1.137680 | 1.137920 | nan | 0.000097 | 1 |
-| 2016-04-01 00:01:00 | 16 | 1.137880 | 1.138030 | 1.137800 | 1.138030 | 0.000097 | 0.000132 | 1 |
-| 2016-04-01 00:02:00 | 11 | 1.138060 | 1.138210 | 1.138040 | 1.138180 | 0.000132 | 0.000000 | 1 |
-| 2016-04-01 00:03:00 | 15 | 1.138160 | 1.138230 | 1.138130 | 1.138180 | 0.000000 | 0.000000 | 1 |
-| 2016-04-01 00:04:00 | 8 | 1.138180 | 1.138200 | 1.138140 | 1.138180 | 0.000000 | 0.000123 | 1 |
-| 2016-04-01 00:05:00 | 4 | 1.138220 | 1.138320 | 1.138220 | 1.138320 | 0.000123 | -0.000018 | 0 |
-| 2016-04-01 00:06:00 | 14 | 1.138280 | 1.138300 | 1.138220 | 1.138300 | -0.000018 | -0.000018 | 0 |
-| 2016-04-01 00:07:00 | 10 | 1.138340 | 1.138340 | 1.138270 | 1.138280 | -0.000018 | 0.000325 | 1 |
-| 2016-04-01 00:08:00 | 42 | 1.138320 | 1.138720 | 1.138320 | 1.138650 | 0.000325 | 0.000026 | 1 |
-| 2016-04-01 00:09:00 | 12 | 1.138620 | 1.138720 | 1.138620 | 1.138680 | 0.000026 | -0.000123 | 0 |
+| 0:00 | 29 | 1.137860 | 1.137960 | 1.137680 | 1.137920 | nan | 0.000097 | 1 |
+| 1:00 | 16 | 1.137880 | 1.138030 | 1.137800 | 1.138030 | 0.000097 | 0.000132 | 1 |
+| 2:00 | 11 | 1.138060 | 1.138210 | 1.138040 | 1.138180 | 0.000132 | 0.000000 | 1 |
+| 3:00 | 15 | 1.138160 | 1.138230 | 1.138130 | 1.138180 | 0.000000 | 0.000000 | 1 |
+| 4:00 | 8 | 1.138180 | 1.138200 | 1.138140 | 1.138180 | 0.000000 | 0.000123 | 1 |
+| 5:00 | 4 | 1.138220 | 1.138320 | 1.138220 | 1.138320 | 0.000123 | -0.000018 | 0 |
+| 6:00 | 14 | 1.138280 | 1.138300 | 1.138220 | 1.138300 | -0.000018 | -0.000018 | 0 |
+| 7:00 | 10 | 1.138340 | 1.138340 | 1.138270 | 1.138280 | -0.000018 | 0.000325 | 1 |
+| 8:00 | 42 | 1.138320 | 1.138720 | 1.138320 | 1.138650 | 0.000325 | 0.000026 | 1 |
+| 9:00 | 12 | 1.138620 | 1.138720 | 1.138620 | 1.138680 | 0.000026 | -0.000123 | 0 |
 
+### Log Returns Distribution vs. Arithmetic Returns Distribution
 ![alttext](/imgs/returns.png "Forex Returns")
 
 Future Opportunities: Incorporate regression not just classification.
 
-# Add Features
+# Features
 
 Below are the technical analysis features that were added to the data.
 
@@ -163,21 +173,23 @@ Use these tools in a pipeline to prevent data leakage and allow for gridsearchin
 
 Future Opportunities: Try other dimensionality reduction algorithms (t-sne) and other feature selection methods.
 
-# Model and Gridsearch
+# Modeling
 
-Gridsearch Cross Validate (Train / Test Split) each pipeline with a variety of parameters for each for each candle granularity and take the model with the highest score.
+Spin up the most expensive AWS EC2 instances and gridsearch cross validate (train / test split) each pipeline with a variety of parameters for each for each candle granularity and take the model with the highest score.
 Customized the gridsearch scoring function to maximize returns.
+
+Neural Network and XGBoost Classifier
 
 Future Opportunities: Optomize the gridsearch scoring function to incorporate other financial metrics including alpha, beta, max drawdown, etc.
 
-# Analyze Results
+# Results
 
 Look are predicted probability by models
 Calculate the returns and the classification metrics including a confusion matrix, accuracy, precision, recall, roc curve.
 
 Future Opportunities: Tune a trading strategy based upon probabilities. Use a proper backtesting library incorporating bid / ask spreads, trading fees.
 
-# Share Results
+# Web Application
 
 Continuously update database with live candles.
 Continuously fit gridsearched models and predict the future direction for each candle granularity.
@@ -186,7 +198,7 @@ Display results in table with tradingview widgets below.
 LINK TO WEBSITE HERE
 
 
-# Forex Resources
+# Resources
 
 * get data
   * oanda restful api
