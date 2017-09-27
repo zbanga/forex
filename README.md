@@ -1,5 +1,7 @@
 
-# EUR/USD Foreign Exchange Rate Prediction
+# * **`WORK IN PROGRESS DUE 10/10/2017`** *
+
+# **EUR/USD Foreign Exchange Rate Prediction**
 
 Using neural networks and boosted trees to predict the direction of of the EUR/USD foreign exchange rates.
 
@@ -195,13 +197,13 @@ Calculate the returns and the classification metrics including a confusion matri
 
 ![alttext](/imgs/calcreturns.png "Bad ROC")
 
-Future Opportunities: Tune a trading strategy based upon probabilities. Use a proper backtesting library incorporating bid / ask spreads, trading fees.
+Future Opportunities: Stack classification and regression models. Tune a trading strategy based upon probabilities. Use a proper backtesting library incorporating bid / ask spreads, trading fees. Paper Trade.
 
 # Web Application
 
-Continuously update database with live candles.
-Continuously fit gridsearched models and predict the future direction for each candle granularity.
-Display results in table with tradingview widgets below.
+Continuously update SQL database with live candles.
+Continuously fit gridsearched models and predict the future direction for each candle granularity and save predictions.
+Display results in table with fancy tradingview widgets below.
 
 LINK TO WEBSITE HERE
 

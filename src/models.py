@@ -53,11 +53,9 @@ todo
 
 live data pipeline and model prediction. incorporate new pickled models. nn and xg.
 website clean with tradingview apps
-
 get model probability prediction distributions. only trade if proba is standard deviations away. graph historical distributions and prediction.
 feature selection with trees, kbest, feature selection sklearn stuff.
-add alpha, beta, sharpe, sortino, max drawdown, volatility
-oanda api: get forex lab data, paper trade
+recacl return distriubtions, pca variance n components, pca 2, roc, returns
 
 what is the state of the art?
 what are the technical indicators?
@@ -109,7 +107,8 @@ def add_features(df):
     volu_ind = talib.get_function_groups()['Volume Indicators']
     cyc_ind = talib.get_function_groups()['Cycle Indicators']
     vola_ind = talib.get_function_groups()['Volatility Indicators']
-    talib_abstract_fun_list = mom_ind + over_stud + volu_ind + cyc_ind + vola_ind
+    stats_ind = talib.get_function_groups()['Statistic Functions']
+    talib_abstract_fun_list = mom_ind + over_stud + volu_ind + cyc_ind + vola_ind + stats_ind
     talib_abstract_fun_list.remove('MAVP')
     ohlcv = {
     'open': df['open'],
@@ -210,22 +209,22 @@ def get_pipelines():
     gnb = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', GaussianNB())])
     qda = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', QuadraticDiscriminantAnalysis())])
     pipes = {
-            'lr': lr,
-            'dtc': dtc,
-            'rfc': rfc,
-            'abc': abc,
-            'gbc': gbc,
-            'nnm': nnm,
-            'xgb': xgb,
-            'mlp': mlp,
-            'gnb': gnb,
-            'qda': qda,
-            'svc_r': svc_r,
-            'svc_l': svc_l,
-            'svc_p': svc_p,
-            'svc_s': svc_s,
-            'knc': knc,
-            'gpc': gpc
+            'lr': lr
+            # 'dtc': dtc,
+            # 'rfc': rfc,
+            # 'abc': abc,
+            # 'gbc': gbc,
+            # 'nnm': nnm,
+            # 'xgb': xgb,
+            # 'mlp': mlp,
+            # 'gnb': gnb,
+            # 'qda': qda,
+            # 'svc_r': svc_r,
+            # 'svc_l': svc_l,
+            # 'svc_p': svc_p,
+            # 'svc_s': svc_s,
+            # 'knc': knc,
+            # 'gpc': gpc
             }
     return pipes
 
@@ -337,7 +336,7 @@ def load_gridsearch(file_name):
     pick = pickle.load(open(file_name, 'rb'))
     return pick
 
-def pipe_cross_val(n_splits=2):
+def pipe_cross_val(x, y, df, pipes, n_splits=2):
     '''
     cross validates models and returns prediction results
     '''
@@ -431,7 +430,7 @@ def live_predict(grid_pickle='../picklehistory/grid_search_big_object_v1.pkl'):
         print('completed prediction: {}'.format(count))
         time.sleep(1)
 
-def plot_compare_scalers():
+def plot_compare_scalers(df):
     '''
     compare sklearn scalers
     '''
@@ -468,20 +467,19 @@ def plot_prediction_returns(pred_returns):
     plt.plot(cum_returns)
     plt.legend(loc='best')
 
-def plot_dim_2():
+def plot_dim_2(x, y):
     '''
     plot 2 pca features
     '''
     pca = Pipeline([('scale',StandardScaler()), ('pca', PCA(n_components=2))])
-    tsne = Pipeline([('scale',StandardScaler()), ('tsne', TSNE(n_components=2, verbose=3))])
-    dim_red = [pca, tsne]
-    fig, axes = plt.subplots(2, 1)
-    for i, ax in enumerate(axes.reshape(-1)):
-        x_new = dim_red[i].fit_transform(x)
-        x_new_one = x_new[y==1]
-        x_new_zero = x_new[y==0]
-        ax.scatter(x_new_one[:,0], x_new_one[:,1], c='green', label='up', alpha=.1)
-        ax.scatter(x_new_zero[:,0], x_new_zero[:,1], c='orange', label='down', alpha=.1)
+    # dim_red = [pca]
+    fig, ax = plt.subplots(1, 1)
+    # for i, ax in enumerate(axes.reshape(-1)):
+    x_new = pca.fit_transform(x)
+    x_new_one = x_new[y==1]
+    x_new_zero = x_new[y==0]
+    ax.scatter(x_new_one[:,0], x_new_one[:,1], c='green', label='up', alpha=.1)
+    ax.scatter(x_new_zero[:,0], x_new_zero[:,1], c='orange', label='down', alpha=.1)
     plt.legend(loc='best')
 
 def plot_line_data(price_series, figtitle):
@@ -498,7 +496,7 @@ def plot_a_feature(feature_names, date_start, date_end):
     '''
     df.loc[date_start:date_end].plot(y=feature_names, figsize=(25,10))
 
-def plot_pca_elbow():
+def plot_pca_elbow(x):
     '''
     plot pca elbow
     '''
@@ -528,10 +526,10 @@ def all_steps_simple_cross_val():
     print('added targets')
     df = add_features(df)
     print('added features')
-    x, y, last_x_pred, last_x_ohlcv = split_data_x_y()
+    x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
     pipes = get_pipelines()
     print('got pipes')
-    prediction_df = pipe_cross_val(n_splits=2)
+    prediction_df = pipe_cross_val(x, y, df, pipes, n_splits=2)
     calc_and_print_prediction_returns_pred(prediction_df)
     calc_and_print_prediction_stats(prediction_df)
     proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
@@ -547,13 +545,15 @@ def all_steps_simple_cross_val():
     for return_col in proba_cols:
         plot_pred_proba_hist(return_col, prediction_df[return_col])
     plt.show()
-    plot_compare_scalers()
+    plot_compare_scalers(df)
     plt.show()
-    plot_dim_2()
+    plot_dim_2(x, y)
     plt.show()
-    plot_pca_elbow()
+    plot_pca_elbow(x)
     plt.show()
 
 
 if __name__ == '__main__':
-    dump_big_gridsearch()
+    all_steps_simple_cross_val()
+
+    #dump_big_gridsearch()
