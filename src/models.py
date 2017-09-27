@@ -47,20 +47,22 @@ import psycopg2 as pg2
 from sqlalchemy import create_engine
 from oandadatapostgres import return_data_table_gt_time, clean_data
 plt.style.use('ggplot')
+
 '''
 todo
+
+live data pipeline and model prediction. incorporate new pickled models. nn and xg.
+website clean with tradingview apps
+
+get model probability prediction distributions. only trade if proba is standard deviations away. graph historical distributions and prediction.
+feature selection with trees, kbest, feature selection sklearn stuff.
+add alpha, beta, sharpe, sortino, max drawdown, volatility
+oanda api: get forex lab data, paper trade
 
 what is the state of the art?
 what are the technical indicators?
 why scaling?
 why log returns?
-
-only trade if proba is standard deviations away
-feature selection
-only trade if proba is standard deviations away
-add returns, alpha, beta, sharpe, sortino, max drawdown, volatility
-live data pipeline and model prediction
-website tradingview apps
 '''
 
 def get_data(file_name, date_start, date_end):

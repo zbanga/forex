@@ -1,3 +1,113 @@
+
+
+# Acquire Data
+
+*Still* | `renders` | **nicely**
+
+I used the Oanda API to download historical EUR_USD exchange prices to a PostgreSQL database. The API only allows you to receive 5,000 records per request so I setup a script to download this information overnight. The database contains tables with the exchange price every 5 seconds, 10 seconds, 15 seconds, etc. as shown by the table below.
+
+Granularity | Description
+--- | ---
+S5 | 5 second candlesticks, minute alignment
+S10 | 10 second candlesticks, minute alignment
+S15 | 15 second candlesticks, minute alignment
+S30 | 30 second candlesticks, minute alignment
+M1 | 1 minute candlesticks, minute alignment
+M2 | 2 minute candlesticks, hour alignment
+M4 | 4 minute candlesticks, hour alignment
+M5 | 5 minute candlesticks, hour alignment
+M10 | 10 minute candlesticks, hour alignment
+M15 | 15 minute candlesticks, hour alignment
+M30 | 30 minute candlesticks, hour alignment
+H1 | 1 hour candlesticks, hour alignment
+H2 | 2 hour candlesticks, day alignment
+H3 | 3 hour candlesticks, day alignment
+H4 | 4 hour candlesticks, day alignment
+H6 | 6 hour candlesticks, day alignment
+H8 | 8 hour candlesticks, day alignment
+H12 | 12 hour candlesticks, day alignment
+D | 1 day candlesticks, day alignment
+W | 1 week candlesticks, aligned to start of week
+M | 1 month candlesticks, aligned to first day of the month
+
+#### Minute Candles Example
+time | volume | open | high | low | close | complete
+--- | --- | --- | --- | --- | --- | ---
+2005-01-02 20:46:00 | 1 | 1.356100 | 1.356100 | 1.356100 | 1.356100 | True
+2005-01-02 20:47:00 | 3 | 1.356000 | 1.356800 | 1.356000 | 1.356100 | True
+2005-01-02 20:48:00 | 1 | 1.356000 | 1.356000 | 1.356000 | 1.356000 | True
+2005-01-02 20:49:00 | 5 | 1.356100 | 1.356600 | 1.355800 | 1.355800 | True
+2005-01-02 20:50:00 | 2 | 1.355700 | 1.355700 | 1.355600 | 1.355600 | True
+2005-01-02 20:51:00 | 3 | 1.355600 | 1.355600 | 1.355200 | 1.355200 | True
+2005-01-02 20:52:00 | 4 | 1.355500 | 1.356100 | 1.355100 | 1.355100 | True
+2005-01-02 20:53:00 | 4 | 1.355200 | 1.355200 | 1.354600 | 1.354900 | True
+2005-01-02 20:54:00 | 8 | 1.355500 | 1.355500 | 1.354100 | 1.354100 | True
+2005-01-02 20:55:00 | 2 | 1.354100 | 1.355000 | 1.354100 | 1.355000 | True
+
+![alttext](/imgs/forexline.png "Forex Line")
+
+
+<!-- TradingView Widget BEGIN -->
+<div id="tv-medium-widget-64ec8"></div>
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+<script type="text/javascript">
+new TradingView.MediumWidget({
+  "container_id": "tv-medium-widget-64ec8",
+  "symbols": [
+    [
+      "EUR_USD",
+      "OANDA:EURUSD|1d"
+    ]
+  ],
+  "gridLineColor": "#e9e9ea",
+  "fontColor": "#83888D",
+  "underLineColor": "#dbeffb",
+  "trendLineColor": "#4bafe9",
+  "width": "1000px",
+  "height": "400px",
+  "locale": "en"
+});
+</script>
+<!-- TradingView Widget END -->
+
+http://developer.oanda.com/rest-live-v20/introduction/
+
+# Create Target
+
+
+
+
+# Add Features
+
+
+
+
+
+# Exploratory Analysis
+
+
+
+
+# Model and Gridsearch
+
+
+
+
+# Analyze Results
+
+
+
+
+
+
+# Share Results
+
+Live data pipeline
+
+
+
+
+
 forex
 
 * get data

@@ -14,6 +14,7 @@ SSH 22
 HTTP 80
 Custom TCP Rule 8080
 RabitMQ
+https://www.tradingview.com/widget/
 '''
 
 app = Flask(__name__)
