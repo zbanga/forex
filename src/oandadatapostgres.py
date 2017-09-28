@@ -180,7 +180,7 @@ def get_data_continuous_multiple_time_stamps():
             last_timestamp = get_last_timestamp(table_names[i])
             print('last time stamp in {}: {}'.format(table_names[i], last_timestamp))
             params = {'price': 'M', 'granularity': grans[i],
-                      'count': 100,
+                      'count': 5000,
                       'from': last_timestamp,
                       'includeFirst': False,
                       'alignmentTimezone': 'America/New_York'}
@@ -255,7 +255,7 @@ if __name__ == '__main__':
 
     # data = return_data_table('eur_usd_d')
     # df = clean_data(data)
-    #get_data_continuous_multiple_time_stamps()
+    get_data_continuous_multiple_time_stamps()
 
     #
     # granularities = ['S5', 'S10', 'S15', 'S30', 'M2', 'M4', 'M5', 'M10', 'M15', 'M30', 'H1', 'H2', 'H3','H4', 'H6', 'H8', 'H12', 'D']

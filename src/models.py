@@ -683,7 +683,8 @@ def all_steps_gran_cross_val():
     return prediction_df_nn, prediction_df_xg
 
 if __name__ == '__main__':
-    chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lsvc, model_lsvc, gbc, model_gbc = all_steps_simple_feature_importance()
+    live
+    #chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lsvc, model_lsvc, gbc, model_gbc = all_steps_simple_feature_importance()
 
 
     #prediction_df_nn, prediction_df_xg = all_steps_gran_cross_val()
