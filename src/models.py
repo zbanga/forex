@@ -98,7 +98,7 @@ def add_target(df):
     df['target_label_direction_shifted'] = df['log_returns_shifted'].apply(up_down)
     return df
 
-def feature_analysis():
+def feature_dfs():
     mom_ind = talib.get_function_groups()['Momentum Indicators']
     over_stud = talib.get_function_groups()['Overlap Studies']
     volu_ind = talib.get_function_groups()['Volume Indicators']
@@ -130,7 +130,7 @@ def add_features(df):
     technical analysis features
     http://mrjbq7.github.io/ta-lib/doc_index.html
     '''
-    no_params_df, only_time_period_df, other_param_df = feature_analysis()
+    no_params_df, only_time_period_df, other_param_df = feature_dfs()
     ohlcv = {
     'open': df['open'],
     'high': df['high'],
@@ -259,98 +259,58 @@ def get_variety_pipes():
     '''
     builds pipelines to cross val and gridsearch
     '''
-    rf_feat = Pipeline([('feature_selection', SelectFromModel(LinearSVC(penalty="l1"))),('classification', RandomForestClassifier())])
-    lr_k = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest(chi2, k=30)), ('clf', LogisticRegression())])
-    lr = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA()), ('clf', LogisticRegression())])
-    dtc = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA()), ('clf', DecisionTreeClassifier())])
-    rfc = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA()), ('clf', RandomForestClassifier(n_jobs=-1))])
-    abc = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA()), ('clf', AdaBoostClassifier())])
-    gbc = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA()), ('clf', GradientBoostingClassifier())])
-    nnm = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA(30)), ('clf', KerasClassifier(build_fn=get_nn, epochs=100, batch_size=500, verbose=0))])
-    xgb = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA(25)), ('clf', XGBClassifier(max_depth=8, n_estimators=1000))])
-    mlp = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA(30)), ('clf', MLPClassifier(hidden_layer_sizes=(100,3), activation='logistic', learning_rate_init=0.0001, batch_size=500, max_iter=5000, early_stopping=True))])
-    # svc_r = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', SVC(kernel='rbf', probability=True))])
-    # svc_l = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', SVC(kernel='linear', probability=True))])
-    # svc_p = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', SVC(kernel='poly', probability=True))])
-    # svc_s = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', SVC(kernel='sigmoid', probability=True))])
-    # knc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', KNeighborsClassifier(3, n_jobs=-1))])
-    gpc = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', GaussianProcessClassifier(n_jobs=-1))])
-    gnb = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', GaussianNB())])
-    qda = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', QuadraticDiscriminantAnalysis())])
-    pipes = {
-            'lr': lr
-            # 'dtc': dtc,
-            # 'rfc': rfc,
-            # 'abc': abc,
-            # 'gbc': gbc,
-            # 'nnm': nnm,
-            # 'xgb': xgb,
-            # 'mlp': mlp,
-            # 'gnb': gnb,
-            # 'qda': qda,
-            # 'svc_r': svc_r,
-            # 'svc_l': svc_l,
-            # 'svc_p': svc_p,
-            # 'svc_s': svc_s,
-            # 'knc': knc,
-            # 'gpc': gpc
-            }
+    lr = LogisticRegression
+    dt = DecisionTreeClassifier()
+    rf = RandomForestClassifier()
+    ab = AdaBoostClassifier()
+    gb = GradientBoostingClassifier()
+    kc = KerasClassifier(build_fn=get_nn, epochs=100, batch_size=500, verbose=0)
+    xg = XGBClassifier(max_depth=8, n_estimators=1000)
+    ml = MLPClassifier(hidden_layer_sizes=(100,3), activation='logistic', learning_rate_init=0.0001, batch_size=500, max_iter=5000, early_stopping=True)
+    svc_r = SVC(kernel='rbf', probability=True)
+    svc_l = SVC(kernel='linear', probability=True)
+    svc_p = SVC(kernel='poly', probability=True)
+    svc_s = SVC(kernel='sigmoid', probability=True)
+    knc = KNeighborsClassifier(3, n_jobs=-1)
+    gpc = GaussianProcessClassifier(n_jobs=-1)
+    gnb = GaussianNB()
+    qda = QuadraticDiscriminantAnalysis()
+    pipe = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA(.95)), ('kbest', SelectKBest(20)), ('clf', LogisticRegression())])
+    classifiers = [lr, dt, rf, ab, gb, kc, xg, ml, svc_r, svc_l, svc_p, svc_s, knc, gpc, gnb, qda]
+    pipes = {}
+    for clf in classifiers:
+        pipes[clf.__class__.__name__] = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA(.95)), ('kbest', SelectKBest(20)), ('clf', clf)])
     return pipes
 
-def get_lr_pipes():
-    '''
-    lr pipeline for cross val and gridsearch
-    '''
-    lr = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest()), ('pca', PCA()), ('lr', LogisticRegression())])
-    pipes = {'lr': lr}
-    params = {
+def store_pipe_params():
+    pipeline = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest()), ('pca', PCA()), ('lr', LogisticRegression())])
+    parameters = [{
+    'clf': [LogisticRegression()],
+    'pca__n_components': [.6, .7, .8, .9, .95],
     'kbest__score_func': [chi2, f_classif, mutual_info_classif],
     'kbest__k': list(range(10, 45, 5)),
-    'pca__n_components': list(range(10, 45, 5)),
     'lr__penalty': ['l1', 'l2'],
     'lr__C': [1, .1, .01, .001, .0001]
-    }
-    return pipes
-
-
-def get_nn_pipes():
-    eur_usd_d_nn = load_gridsearch('../picklehistory/nn/EUR_USD_D_grid_nn_object_v1.pkl').best_estimator_
-    eur_usd_h12_nn = load_gridsearch('../picklehistory/nn/EUR_USD_H12_grid_nn_object_v1.pkl').best_estimator_
-    eur_usd_h6_nn = load_gridsearch('../picklehistory/nn/EUR_USD_H6_grid_nn_object_v1.pkl').best_estimator_
-    eur_usd_h1_nn = load_gridsearch('../picklehistory/nn/EUR_USD_H1_grid_nn_object_v1.pkl').best_estimator_
-    eur_usd_m30_nn = load_gridsearch('../picklehistory/nn/EUR_USD_M30_grid_nn_object_v1.pkl').best_estimator_
-    eur_usd_m15_nn = load_gridsearch('../picklehistory/nn/EUR_USD_M15_grid_nn_object_v1.pkl').best_estimator_
-    eur_usd_m1_nn = load_gridsearch('../picklehistory/nn/EUR_USD_M1_grid_nn_object_v1.pkl').best_estimator_
-    pipes = {
-            'eur_usd_d_nn': eur_usd_d_nn,
-            'eur_usd_h12_nn': eur_usd_h12_nn,
-            'eur_usd_h6_nn': eur_usd_h6_nn,
-            'eur_usd_h1_nn': eur_usd_h1_nn,
-            'eur_usd_m30_nn': eur_usd_m30_nn,
-            'eur_usd_m15_nn': eur_usd_m15_nn,
-            'eur_usd_m1_nn': eur_usd_m1_nn
-            }
-    return pipes
-
-def get_xg_pipes():
-    eur_usd_d_xg = load_gridsearch('../picklehistory/xg/EUR_USD_D_grid_xg_object_v1.pkl').best_estimator_
-    eur_usd_h12_xg = load_gridsearch('../picklehistory/xg/EUR_USD_H12_grid_xg_object_v1.pkl').best_estimator_
-    eur_usd_h6_xg = load_gridsearch('../picklehistory/xg/EUR_USD_H6_grid_xg_object_v1.pkl').best_estimator_
-    eur_usd_h1_xg = load_gridsearch('../picklehistory/xg/EUR_USD_H1_grid_xg_object_v1.pkl').best_estimator_
-    eur_usd_m30_xg = load_gridsearch('../picklehistory/xg/EUR_USD_M30_grid_xg_object_v1.pkl').best_estimator_
-    eur_usd_m15_xg = load_gridsearch('../picklehistory/xg/EUR_USD_M15_grid_xg_object_v1.pkl').best_estimator_
-    eur_usd_m1_xg = load_gridsearch('../picklehistory/xg/EUR_USD_M1_grid_xg_object_v1.pkl').best_estimator_
-    pipes = {
-            'eur_usd_d_xg': eur_usd_d_xg,
-            'eur_usd_h12_xg': eur_usd_h12_xg,
-            'eur_usd_h6_xg': eur_usd_h6_xg,
-            'eur_usd_h1_xg': eur_usd_h1_xg,
-            'eur_usd_m30_xg': eur_usd_m30_xg,
-            'eur_usd_m15_xg': eur_usd_m15_xg,
-            'eur_usd_m1_xg': eur_usd_m1_xg
-            }
-    return pipes
-
+    },{
+    'clf': [XGBClassifier()],
+    'pca__n_components': [.6, .7, .8, .9, .95],
+    'kbest__score_func': [chi2, f_classif, mutual_info_classif],
+    'kbest__k': list(range(10, 45, 5)),
+    'clf__n_estimators': [100, 200, 500, 1000],
+    'clf__max_depth': [3,5,8,10]},
+    {
+    'clf': [MLPClassifier()],
+    'pca__n_components': [.7, .8, .9, .95],
+    'kbest__score_func': [chi2, f_classif, mutual_info_classif],
+    'kbest__k': list(range(10, 45, 5)),
+    'clf__hidden_layer_sizer': [(100,1), (100,2), (100,3)],
+    'clf__activation': ['logistic', 'tanh', 'relu'],
+    'clf__learning_rate_init': [.0001],
+    'clf__batch_size': [500],
+    'clf__max_iter': [5000],
+    'clf__early_stopping': [True]
+    }]
+    return pipeline, parameters
 
 def gridsearch_score_returns(y_true, y_pred):
     '''
@@ -362,65 +322,6 @@ def gridsearch_score_returns(y_true, y_pred):
     score = (np.exp(np.sum(prediction_df['y_pred'].map({1:1, 0:-1}).shift(1) * prediction_df['log_returns']))-1)*100
     print('{:.2f}%'.format(score))
     return score
-
-def gridsearch_pipe(n_splits=2):
-    '''
-    grid search a single pipe and return gridsearch and results
-    '''
-    score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
-    pca_range = list(range(4,14,2))
-    param_grid = {
-            'pca__n_components': pca_range,
-            'clf': [LogisticRegression()],
-            'clf__C': [0.1, 0.01, .001],
-            'clf__penalty': ['l2', 'l1']}
-    grid_search = GridSearchCV(estimator=pipes['lr'],
-                             param_grid=param_grid,
-                             n_jobs=-1,
-                             verbose=2,
-                             cv=TimeSeriesSplit(n_splits=n_splits),
-                             scoring=score_returns)
-    grid_search.fit(x, y)
-    grid_search_results = pd.DataFrame(grid_search.cv_results_)
-    pickle.dump(grid_search, open('grid_search_one_object.pkl', 'wb'))
-    pickle.dump(grid_search_results, open('grid_search_results_one_df.pkl', 'wb'))
-    return grid_search, grid_search_results
-
-def store_grid_params():
-    parameters2 = [
-            {
-            'pca__n_components': pca_range,
-            'clf': [LogisticRegression()],
-            'clf__C': [0.1, 0.01, .001],
-            'clf__penalty': ['l2', 'l1']},
-            {
-            'pca__n_components': pca_range,
-            'clf': [DecisionTreeClassifier()],
-            'clf__max_depth': [None, 10, 20, 50]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [RandomForestClassifier()],
-            'clf__n_estimators': [10, 50, 100]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [GradientBoostingClassifier()],
-            'clf__n_estimators': [100, 500, 1000],
-            'clf__max_depth': [3,5,8]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [AdaBoostClassifier()],
-            'clf__n_estimators': [100, 500, 1000]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [XGBClassifier()],
-            'clf__n_estimators': [100, 200, 500, 1000],
-            'clf__max_depth': [3,5,8,10]},
-            {
-            'pca__n_components': pca_range,
-            'clf': [XGBClassifier()],
-            'clf__n_estimators': [100, 200, 500, 1000],
-            'clf__max_depth': [3,5,8,10]}]
-    return parameters2
 
 def dump_big_gridsearch(n_splits=2):
     '''
@@ -440,14 +341,7 @@ def dump_big_gridsearch(n_splits=2):
         x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
         print('starting grid search')
         score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
-        pipeline = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest()), ('pca', PCA()), ('lr', LogisticRegression())])
-        parameters = {
-        'kbest__score_func': [chi2, f_classif, mutual_info_classif],
-        'kbest__k': list(range(10, 45, 5)),
-        'pca__n_components': [.6, .7, .8, .9, .95],
-        'lr__penalty': ['l1', 'l2'],
-        'lr__C': [1, .1, .01, .001, .0001]
-        }
+        pipeline, parameters = store_pipe_params()
         grid_search = GridSearchCV(pipeline,
                                  param_grid=parameters,
                                  verbose=1,
@@ -456,8 +350,8 @@ def dump_big_gridsearch(n_splits=2):
                                  scoring='roc_auc')
         grid_search.fit(x, y)
         grid_search_results = pd.DataFrame(grid_search.cv_results_)
-        pickle.dump(grid_search, open('../picklehistory/'+table_name+'_grid_lr_object_v1.pkl', 'wb'))
-        pickle.dump(grid_search_results, open('../picklehistory/'+table_name+'_grid_lr_results_v1.pkl', 'wb'))
+        pickle.dump(grid_search, open('../picklehistory/'+table_name+'_grid_object_v100.pkl', 'wb'))
+        pickle.dump(grid_search_results, open('../picklehistory/'+table_name+'_grid_results_v100.pkl', 'wb'))
 
 def load_gridsearch(file_name):
     '''
@@ -466,7 +360,28 @@ def load_gridsearch(file_name):
     pick = pickle.load(open(file_name, 'rb'))
     return pick
 
-def var_model_pipe_cross_val(x, y, df, pipes, n_splits=2):
+def get_lr_grids():
+    table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+    for table in table_names:
+        table_upper = table.upper()
+        pipes[table+'_lr'] = load_gridsearch('../picklehistory/lr/'+table_upper+'_grid_lr_object_v1.pkl').best_estimator_
+    return pipes
+
+def get_nn_grids():
+    table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+    for table in table_names:
+        table_upper = table.upper()
+        pipes[table+'_nn'] = load_gridsearch('../picklehistory/nn/'+table_upper+'_grid_lr_object_v1.pkl').best_estimator_
+    return pipes
+
+def get_xg_grids():
+    table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+    for table in table_names:
+        table_upper = table.upper()
+        pipes[table+'_xg'] = load_gridsearch('../picklehistory/xg/'+table_upper+'_grid_lr_object_v1.pkl').best_estimator_
+    return pipes
+
+def var_model_one_gran_pipe_cross_val(x, y, df, pipes, n_splits=2):
     '''
     cross validates models and returns prediction results
     '''
@@ -510,7 +425,6 @@ def specific_model_gran_pipe_cross_val(x, y, df, pipe_name, pipe, n_splits=2):
         end = time.time()
         print('trained: {} seconds: {:.2f}'.format(pipe_name, end-start))
     return prediction_df
-
 
 def calc_and_print_prediction_returns_pred(prediction_df):
     '''
@@ -572,22 +486,30 @@ def plot_compare_scalers(df):
             ax.set_title(scale.__class__.__name__)
             print('{} min: {:.2f} max: {:.2f}'.format(scale.__class__.__name__, close_prices_scaled.min(), close_prices_scaled.max()))
 
-def plot_prediction_roc(mod_name, y_true, y_pred_proba):
+def plot_prediction_roc(mod_name, prediction_df):
     '''
     plot roc curves
     '''
-    fpr, tpr, thresholds = roc_curve(y_true, y_pred_proba)
-    roc_auc = auc(fpr, tpr) * 100
-    plt.plot(fpr, tpr, lw=2, label='{} auc: {:.2f}'.format(mod_name, roc_auc))
+    proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba' and col[-12] == '1']
+    for pred_col in proba_cols:
+        sp_ind = re.search('_\d_', pred_col).group(0)[1]
+        y_true =  prediction_df['y_test_{}'.format(sp_ind)]
+        y_pred_proba = prediction_df[pred_col]
+        fpr, tpr, thresholds = roc_curve(y_true, y_pred_proba)
+        roc_auc = auc(fpr, tpr) * 100
+        plt.plot(fpr, tpr, lw=2, label='{} auc: {:.2f}'.format(mod_name, roc_auc))
     plt.plot([0, 1], [0, 1], 'k--', lw=1)
     plt.legend(loc='best')
 
-def plot_prediction_returns(pred_returns):
+def plot_prediction_returns(prediction_df):
     '''
     plot returns
     '''
-    cum_returns = pred_returns.cumsum().apply(np.exp)-1 #you can add log returns and then transpose back with np.exp
-    plt.plot(cum_returns)
+    return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' and col[-14] == '1']
+    for return_col in return_cols:
+        pred_returns = prediction_df[return_col]
+        cum_returns = pred_returns.cumsum().apply(np.exp)-1 #you can add log returns and then transpose back with np.exp
+        plt.plot(cum_returns)
     plt.legend(loc='best')
 
 def plot_dim_2(x, y):
@@ -643,7 +565,7 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
     ax.set_title(plot_title)
 
 def all_steps_simple_feature_importance():
-    df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
+    df = get_data('EUR_USD_15', datetime(2016,4,1), datetime(2016,6,1))
     print('got data')
     df = add_target(df)
     print('added targets')
@@ -654,14 +576,14 @@ def all_steps_simple_feature_importance():
     return chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp
 
 def all_steps_simple_cross_val():
-    df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
+    df = get_data('EUR_USD_M15', datetime(2012,1,1), datetime(2018,1,1))
     print('got data')
     df = add_target(df)
     print('added targets')
     df = add_features(df)
     print('added features')
     x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
-    pipes = get_pipelines()
+    pipes = get_lr_grids()
     print('got pipes')
     prediction_df = var_model_pipe_cross_val(x, y, df, pipes, n_splits=2)
     calc_and_print_prediction_returns_pred(prediction_df)
@@ -686,11 +608,11 @@ def all_steps_simple_cross_val():
     plot_pca_elbow(x)
     plt.show()
 
-def all_steps_gran_cross_val():
-    table_names = ['eur_usd_m1']
-    start_time_stamps = [datetime(2017,5,1)]
-    pipes_nn = get_nn_pipes()
+def all_steps_for_grans_one_model_cross_val():
+    table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+    start_time_stamps = [datetime(2000,1,1), datetime(2000,1,1), datetime(2000,1,1), datetime(2000,1,1), datetime(2006,1,1), datetime(2012,1,1), datetime(2017,5,1)]
     pipes_xg = get_xg_pipes()
+    prediction_dfs = {}
     for i in range(len(table_names)):
         gran = table_names[i]
         df = get_data(gran.upper(), start_time_stamps[i], datetime(2018, 1, 1))
@@ -700,17 +622,34 @@ def all_steps_gran_cross_val():
         df = add_features(df)
         print('added features')
         x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
-        pipe_nn = pipes_nn[gran+'_nn']
         pipe_xg = pipes_xg[gran+'_xg']
-        print('got pipes')
-        prediction_df_nn = specific_model_gran_pipe_cross_val(x, y, df, gran, pipe_nn, n_splits=2)
+        print('got pipe')
         prediction_df_xg = specific_model_gran_pipe_cross_val(x, y, df, gran, pipe_xg, n_splits=2)
-        calc_and_print_prediction_stats(prediction_df_nn)
-        calc_and_print_prediction_stats(prediction_df_xg)
-        prediction_df_nn = calc_and_print_prediction_returns_pred(prediction_df_nn)
         prediction_df_xg = calc_and_print_prediction_returns_pred(prediction_df_xg)
+        prediction_dfs[gran+'_xg'] = prediction_df_xg
+    return prediction_dfs
 
-    return prediction_df_nn, prediction_df_xg
+def for_mods_plot_roc_returns(prediction_dfs):
+    for key, value in prediction_dfs.items():
+        plot_prediction_roc(key, value)
+    plt.show()
+    for key, value in prediction_dfs.items():
+        plot_prediction_returns(value)
+    plt.show()
+
+def for_gran_plot_pca():
+    df = get_data('EUR_USD_M15', datetime(2012,1,1), datetime(2018,1,1))
+    print('got data')
+    df = add_target(df)
+    print('added targets')
+    df = add_features(df)
+    print('added features')
+    x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
+    plot_dim_2(x, y)
+    plt.show()
+    plot_pca_elbow(x)
+    plt.show()
+
 
 def live_predict(grid_pickle='../picklehistory/grid_search_big_object_v1.pkl'):
     '''
@@ -744,8 +683,9 @@ def live_predict(grid_pickle='../picklehistory/grid_search_big_object_v1.pkl'):
         time.sleep(1)
 
 if __name__ == '__main__':
-
     dump_big_gridsearch()
+    # prediction_dfs = all_steps_for_grans_one_model_cross_val()
+    # for_mods_plot_roc_returns(prediction_dfs)
 
     # df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
     # print('got data')
@@ -764,7 +704,7 @@ if __name__ == '__main__':
 
     #prediction_df_nn, prediction_df_xg = all_steps_gran_cross_val()
 
-    dump_big_gridsearch()
+    #dump_big_gridsearch()
 '''
 proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
 for pred_col in proba_cols:
