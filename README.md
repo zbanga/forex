@@ -91,74 +91,86 @@ Future Opportunities: Incorporate regression not just classification.
 
 Below are the technical analysis features that were added to the data.
 
-| Group | Short Name | Name |
-|-----------------------|---------------------|---------------------------------------------------|
-| Momentum Indicators | ADX | Average Directional Movement Index |
-| Momentum Indicators | ADXR | Average Directional Movement Index Rating |
-| Momentum Indicators | APO | Absolute Price Oscillator |
-| Momentum Indicators | AROON | Aroon |
-| Momentum Indicators | AROONOSC | Aroon Oscillator |
-| Momentum Indicators | BOP | Balance Of Power |
-| Momentum Indicators | CCI | Commodity Channel Index |
-| Momentum Indicators | CMO | Chande Momentum Oscillator |
-| Momentum Indicators | DX | Directional Movement Index |
-| Momentum Indicators | MACD | Moving Average Convergence/Divergence |
-| Momentum Indicators | MACDEXT | MACD with controllable MA type |
-| Momentum Indicators | MACDFIX | Moving Average Convergence/Divergence Fix 12/26 |
-| Momentum Indicators | MFI | Money Flow Index |
-| Momentum Indicators | MINUS_DI | Minus Directional Indicator |
-| Momentum Indicators | MINUS_DM | Minus Directional Movement |
-| Momentum Indicators | MOM | Momentum |
-| Momentum Indicators | PLUS_DI | Plus Directional Indicator |
-| Momentum Indicators | PLUS_DM | Plus Directional Movement |
-| Momentum Indicators | PPO | Percentage Price Oscillator |
-| Momentum Indicators | ROC | Rate of change : ((price/prevPrice)-1)*100 |
-| Momentum Indicators | ROCP | Rate of change Percentage: (price-prevPrice)/p... |
-| Momentum Indicators | ROCR | Rate of change ratio: (price/prevPrice) |
-| Momentum Indicators | ROCR100 | Rate of change ratio 100 scale: (price/prevPri... |
-| Momentum Indicators | RSI | Relative Strength Index |
-| Momentum Indicators | STOCH | Stochastic |
-| Momentum Indicators | STOCHF | Stochastic Fast |
-| Momentum Indicators | STOCHRSI | Stochastic Relative Strength Index |
-| Momentum Indicators | TRIX | 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA |
-| Momentum Indicators | ULTOSC | Ultimate Oscillator |
-| Momentum Indicators | WILLR | Williams' %R |
-| Overlap Studies | BBANDS | Bollinger Bands |
-| Overlap Studies | DEMA | Double Exponential Moving Average |
-| Overlap Studies | EMA | Exponential Moving Average |
-| Overlap Studies | HT_TRENDLINE | Hilbert Transform - Instantaneous Trendline |
-| Overlap Studies | KAMA | Kaufman Adaptive Moving Average |
-| Overlap Studies | MA | Moving average |
-| Overlap Studies | MAMA | MESA Adaptive Moving Average |
-| Overlap Studies | MIDPOINT | MidPoint over period |
-| Overlap Studies | MIDPRICE | Midpoint Price over period |
-| Overlap Studies | SAR | Parabolic SAR |
-| Overlap Studies | SAREXT | Parabolic SAR - Extended |
-| Overlap Studies | SMA | Simple Moving Average |
-| Overlap Studies | T3 | Triple Exponential Moving Average (T3) |
-| Overlap Studies | TEMA | Triple Exponential Moving Average |
-| Overlap Studies | TRIMA | Triangular Moving Average |
-| Overlap Studies | WMA | Weighted Moving Average |
-| Volume Indicators | AD | Chaikin A/D Line |
-| Volume Indicators | ADOSC | Chaikin A/D Oscillator |
-| Volume Indicators | OBV | On Balance Volume |
-| Cycle Indicators | HT_DCPERIOD | Hilbert Transform - Dominant Cycle Period |
-| Cycle Indicators | HT_DCPHASE | Hilbert Transform - Dominant Cycle Phase |
-| Cycle Indicators | HT_PHASOR | Hilbert Transform - Phasor Components |
-| Cycle Indicators | HT_SINE | Hilbert Transform - SineWave |
-| Cycle Indicators | HT_TRENDMODE | Hilbert Transform - Trend vs Cycle Mode |
-| Volatility Indicators | ATR | Average True Range |
-| Volatility Indicators | NATR | Normalized Average True Range |
-| Volatility Indicators | TRANGE | True Range |
-| Statistic Functions | BETA | Beta |
-| Statistic Functions | CORREL | Pearson's Correlation Coefficient (r) |
-| Statistic Functions | LINEARREG | Linear Regression |
-| Statistic Functions | LINEARREG_ANGLE | Linear Regression Angle |
-| Statistic Functions | LINEARREG_INTERCEPT | Linear Regression Intercept |
-| Statistic Functions | LINEARREG_SLOPE | Linear Regression Slope |
-| Statistic Functions | STDDEV | Standard Deviation |
-| Statistic Functions | TSF | Time Series Forecast |
-| Statistic Functions | VAR | Variance |
+### No parameters
+
+| Group | Short Name | Name | Parameters | Output |
+|-----------------------|--------------|---------------------------------------------|------------|-----------------------|
+| Momentum Indicators | BOP | Balance Of Power | [] | [real] |
+| Overlap Studies | HT_TRENDLINE | Hilbert Transform - Instantaneous Trendline | [] | [real] |
+| Volume Indicators | AD | Chaikin A/D Line | [] | [real] |
+| Volume Indicators | OBV | On Balance Volume | [] | [real] |
+| Cycle Indicators | HT_DCPERIOD | Hilbert Transform - Dominant Cycle Period | [] | [real] |
+| Cycle Indicators | HT_DCPHASE | Hilbert Transform - Dominant Cycle Phase | [] | [real] |
+| Cycle Indicators | HT_PHASOR | Hilbert Transform - Phasor Components | [] | [inphase, quadrature] |
+| Cycle Indicators | HT_SINE | Hilbert Transform - SineWave | [] | [sine, leadsine] |
+| Cycle Indicators | HT_TRENDMODE | Hilbert Transform - Trend vs Cycle Mode | [] | [integer] |
+| Volatility Indicators | TRANGE | True Range | [] | [real] |
+
+### Parameters used were a range every 10 from 5 to 45 inclusive
+
+| Group | Short Name | Name | Parameters | Output |
+|-----------------------|---------------------|---------------------------------------------------|------------------|----------------------|
+| Momentum Indicators | ADX | Average Directional Movement Index | [timeperiod: 14] | [real] |
+| Momentum Indicators | ADXR | Average Directional Movement Index Rating | [timeperiod: 14] | [real] |
+| Momentum Indicators | AROON | Aroon | [timeperiod: 14] | [aroondown, aroonup] |
+| Momentum Indicators | AROONOSC | Aroon Oscillator | [timeperiod: 14] | [real] |
+| Momentum Indicators | CCI | Commodity Channel Index | [timeperiod: 14] | [real] |
+| Momentum Indicators | CMO | Chande Momentum Oscillator | [timeperiod: 14] | [real] |
+| Momentum Indicators | DX | Directional Movement Index | [timeperiod: 14] | [real] |
+| Momentum Indicators | MFI | Money Flow Index | [timeperiod: 14] | [real] |
+| Momentum Indicators | MINUS_DI | Minus Directional Indicator | [timeperiod: 14] | [real] |
+| Momentum Indicators | MINUS_DM | Minus Directional Movement | [timeperiod: 14] | [real] |
+| Momentum Indicators | MOM | Momentum | [timeperiod: 10] | [real] |
+| Momentum Indicators | PLUS_DI | Plus Directional Indicator | [timeperiod: 14] | [real] |
+| Momentum Indicators | PLUS_DM | Plus Directional Movement | [timeperiod: 14] | [real] |
+| Momentum Indicators | ROC | Rate of change : ((price/prevPrice)-1)*100 | [timeperiod: 10] | [real] |
+| Momentum Indicators | ROCP | Rate of change Percentage: (price-prevPrice)/p... | [timeperiod: 10] | [real] |
+| Momentum Indicators | ROCR | Rate of change ratio: (price/prevPrice) | [timeperiod: 10] | [real] |
+| Momentum Indicators | ROCR100 | Rate of change ratio 100 scale: (price/prevPri... | [timeperiod: 10] | [real] |
+| Momentum Indicators | RSI | Relative Strength Index | [timeperiod: 50] | [real] |
+| Momentum Indicators | TRIX | 1-day Rate-Of-Change (ROC) of a Triple Smooth EMA | [timeperiod: 30] | [real] |
+| Momentum Indicators | WILLR | Williams' %R | [timeperiod: 14] | [real] |
+| Overlap Studies | DEMA | Double Exponential Moving Average | [timeperiod: 30] | [real] |
+| Overlap Studies | EMA | Exponential Moving Average | [timeperiod: 30] | [real] |
+| Overlap Studies | KAMA | Kaufman Adaptive Moving Average | [timeperiod: 30] | [real] |
+| Overlap Studies | MIDPOINT | MidPoint over period | [timeperiod: 14] | [real] |
+| Overlap Studies | MIDPRICE | Midpoint Price over period | [timeperiod: 14] | [real] |
+| Overlap Studies | SMA | Simple Moving Average | [timeperiod: 30] | [real] |
+| Overlap Studies | TEMA | Triple Exponential Moving Average | [timeperiod: 30] | [real] |
+| Overlap Studies | TRIMA | Triangular Moving Average | [timeperiod: 30] | [real] |
+| Overlap Studies | WMA | Weighted Moving Average | [timeperiod: 30] | [real] |
+| Volatility Indicators | ATR | Average True Range | [timeperiod: 14] | [real] |
+| Volatility Indicators | NATR | Normalized Average True Range | [timeperiod: 14] | [real] |
+| Statistic Functions | BETA | Beta | [timeperiod: 5] | [real] |
+| Statistic Functions | CORREL | Pearson's Correlation Coefficient (r) | [timeperiod: 30] | [real] |
+| Statistic Functions | LINEARREG | Linear Regression | [timeperiod: 14] | [real] |
+| Statistic Functions | LINEARREG_ANGLE | Linear Regression Angle | [timeperiod: 14] | [real] |
+| Statistic Functions | LINEARREG_INTERCEPT | Linear Regression Intercept | [timeperiod: 14] | [real] |
+| Statistic Functions | LINEARREG_SLOPE | Linear Regression Slope | [timeperiod: 14] | [real] |
+| Statistic Functions | TSF | Time Series Forecast | [timeperiod: 14] | [real] |
+
+### Kept standard parameters for the others
+
+| Group | Short Name | Name | Parameters | Output |
+|---------------------|------------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
+| Momentum Indicators | APO | Absolute Price Oscillator | ['fastperiod: 12', 'slowperiod: 26', 'matype: 0'] | ['real'] |
+| Momentum Indicators | MACD | Moving Average Convergence/Divergence | ['fastperiod: 12', 'slowperiod: 26', 'signalperiod: 9'] | ['macd', 'macdsignal', 'macdhist'] |
+| Momentum Indicators | MACDEXT | MACD with controllable MA type | ['fastperiod: 12', 'fastmatype: 0', 'slowperiod: 26', 'slowmatype: 0', 'signalperiod: 9', 'signalmatype: 0'] | ['macd', 'macdsignal', 'macdhist'] |
+| Momentum Indicators | MACDFIX | Moving Average Convergence/Divergence Fix 12/26 | ['signalperiod: 9'] | ['macd', 'macdsignal', 'macdhist'] |
+| Momentum Indicators | PPO | Percentage Price Oscillator | ['fastperiod: 12', 'slowperiod: 26', 'matype: 0'] | ['real'] |
+| Momentum Indicators | STOCH | Stochastic | ['fastk_period: 5', 'slowk_period: 3', 'slowk_matype: 0', 'slowd_period: 3', 'slowd_matype: 0'] | ['slowk', 'slowd'] |
+| Momentum Indicators | STOCHF | Stochastic Fast | ['fastk_period: 5', 'fastd_period: 3', 'fastd_matype: 0'] | ['fastk', 'fastd'] |
+| Momentum Indicators | STOCHRSI | Stochastic Relative Strength Index | ['timeperiod: 14', 'fastk_period: 5', 'fastd_period: 3', 'fastd_matype: 0'] | ['fastk', 'fastd'] |
+| Momentum Indicators | ULTOSC | Ultimate Oscillator | ['timeperiod1: 7', 'timeperiod2: 14', 'timeperiod3: 28'] | ['real'] |
+| Overlap Studies | BBANDS | Bollinger Bands | ['timeperiod: 5', 'nbdevup: 2', 'nbdevdn: 2', 'matype: 0'] | ['upperband', 'middleband', 'lowerband'] |
+| Overlap Studies | MA | Moving average | ['timeperiod: 30', 'matype: 0'] | ['real'] |
+| Overlap Studies | MAMA | MESA Adaptive Moving Average | ['fastlimit: 0.5', 'slowlimit: 0.05'] | ['mama', 'fama'] |
+| Overlap Studies | SAR | Parabolic SAR | ['acceleration: 0.02', 'maximum: 0.2'] | ['real'] |
+| Overlap Studies | SAREXT | Parabolic SAR - Extended | ['startvalue: 0', 'offsetonreverse: 0', 'accelerationinitlong: 0.02', 'accelerationlong: 0.02', 'accelerationmaxlong: 0.2', 'accelerationinitshort: 0.02', 'accelerationshort: 0.02', 'accelerationmaxshort: 0.2'] | ['real'] |
+| Overlap Studies | T3 | Triple Exponential Moving Average (T3) | ['timeperiod: 5', 'vfactor: 0.7'] | ['real'] |
+| Volume Indicators | ADOSC | Chaikin A/D Oscillator | ['fastperiod: 3', 'slowperiod: 10'] | ['real'] |
+| Statistic Functions | STDDEV | Standard Deviation | ['timeperiod: 5', 'nbdev: 1'] | ['real'] |
+| Statistic Functions | VAR | Variance | ['timeperiod: 5', 'nbdev: 1'] | ['real'] |
 
 https://mrjbq7.github.io/ta-lib/funcs.html
 

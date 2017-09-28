@@ -98,11 +98,7 @@ def add_target(df):
     df['target_label_direction_shifted'] = df['log_returns_shifted'].apply(up_down)
     return df
 
-def add_features(df):
-    '''
-    technical analysis features
-    http://mrjbq7.github.io/ta-lib/doc_index.html
-    '''
+def feature_analysis():
     mom_ind = talib.get_function_groups()['Momentum Indicators']
     over_stud = talib.get_function_groups()['Overlap Studies']
     volu_ind = talib.get_function_groups()['Volume Indicators']
@@ -111,6 +107,30 @@ def add_features(df):
     stats_ind = talib.get_function_groups()['Statistic Functions']
     talib_abstract_fun_list = mom_ind + over_stud + volu_ind + cyc_ind + vola_ind + stats_ind
     talib_abstract_fun_list.remove('MAVP')
+    no_params_df = pd.DataFrame([])
+    only_time_period_df = pd.DataFrame([])
+    other_param_df = pd.DataFrame([])
+    for fun in talib_abstract_fun_list:
+        info = getattr(talib.abstract, fun).info
+        data = pd.Series([info['group'], info['name'], info['display_name'], ['{}: {}'.format(key, value) for key, value in info['parameters'].items()], info['output_names']])
+        if len(info['parameters']) == 0:
+            no_params_df = no_params_df.append(data, ignore_index=True)
+        elif 'timeperiod' in info['parameters'] and len(info['parameters']) == 1:
+            only_time_period_df = only_time_period_df.append(data, ignore_index=True)
+        else:
+            other_param_df = other_param_df.append(data, ignore_index=True)
+    ind_dfs = [no_params_df, only_time_period_df, other_param_df]
+    for ind_df in ind_dfs:
+        ind_df.columns = ['Group', 'Name', 'Short Description', 'Parameters', 'Output Names']
+    return no_params_df, only_time_period_df, other_param_df
+
+
+def add_features(df):
+    '''
+    technical analysis features
+    http://mrjbq7.github.io/ta-lib/doc_index.html
+    '''
+    no_params_df, only_time_period_df, other_param_df = feature_analysis()
     ohlcv = {
     'open': df['open'],
     'high': df['high'],
@@ -118,16 +138,28 @@ def add_features(df):
     'close': df['close'],
     'volume': df['volume'].astype(float)
     }
-    for fun in talib_abstract_fun_list:
+    for fun in no_params_df['Name'].values:
         res = getattr(talib.abstract, fun)(ohlcv)
         if len(res) > 10:
             df[fun] = res
         else:
             for i, val in enumerate(res):
                 df[fun+'_'+str(i+1)] = val
-    for per in [3,6,12,18,24,30]:
-        col_name = 'MAVP_'+str(per)
-        df[col_name] = talib.MAVP(df['close'].values, periods=np.array([float(per)]*df.shape[0]))
+    for fun in only_time_period_df['Name'].values:
+        for timeperiod in range(5, 55, 10):
+            res = getattr(talib.abstract, fun)(ohlcv, timeperiod=timeperiod)
+            if len(res) > 10:
+                df[fun+'_'+str(timeperiod)] = res
+            else:
+                for i, val in enumerate(res):
+                    df[fun+'_'+str(timeperiod)+'_'+str(i+1)] = val
+    for fun in other_param_df['Name'].values:
+        res = getattr(talib.abstract, fun)(ohlcv)
+        if len(res) > 10:
+            df[fun] = res
+        else:
+            for i, val in enumerate(res):
+                df[fun+'_'+str(i+1)] = val
     return df
 
 def split_data_x_y(df):
@@ -146,6 +178,9 @@ def split_data_x_y(df):
     return x, y, last_x_pred, last_x_ohlcv
 
 def momentum_columns():
+    '''
+    not used currently
+    '''
     mom_cols = []
     for mom_time in [1, 15, 30, 60, 120]:
         col = 'average_log_return_{}_sign'.format(mom_time)
@@ -166,6 +201,10 @@ def calc_feature_importance(x, y):
     mut_i_c = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest(mutual_info_classif, k=30))])
     mut_i_c.fit(x, y)
     mut_i_c_feat_imp = pd.DataFrame(mut_i_c.steps[1][1].scores_, index=x.columns).sort_values(by=0, ascending=False)
+    lr = LogisticRegression(C=0.01, penalty="l1", dual=False).fit(x, y)
+    model_lr = SelectFromModel(lr, prefit=True)
+    x_new = model_lr.transform(x)
+    print(x_new.shape)
     lsvc = LinearSVC(C=0.01, penalty="l1", dual=False).fit(x, y)
     model_lsvc = SelectFromModel(lsvc, prefit=True)
     x_new = model_lsvc.transform(x)
@@ -188,7 +227,7 @@ def calc_feature_importance(x, y):
     # plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
     # plt.show()
 
-    return chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lsvc, model_lsvc, gbc, model_gbc
+    return chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp
 
 def get_nn(num_inputs=20):
     '''
@@ -257,6 +296,22 @@ def get_variety_pipes():
             # 'gpc': gpc
             }
     return pipes
+
+def get_lr_pipes():
+    '''
+    lr pipeline for cross val and gridsearch
+    '''
+    lr = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest()), ('pca', PCA()), ('lr', LogisticRegression())])
+    pipes = {'lr': lr}
+    params = {
+    'kbest__score_func': [chi2, f_classif, mutual_info_classif],
+    'kbest__k': list(range(10, 45, 5)),
+    'pca__n_components': list(range(10, 45, 5)),
+    'lr__penalty': ['l1', 'l2'],
+    'lr__C': [1, .1, .01, .001, .0001]
+    }
+    return pipes
+
 
 def get_nn_pipes():
     eur_usd_d_nn = load_gridsearch('../picklehistory/nn/EUR_USD_D_grid_nn_object_v1.pkl').best_estimator_
@@ -359,6 +414,11 @@ def store_grid_params():
             'pca__n_components': pca_range,
             'clf': [XGBClassifier()],
             'clf__n_estimators': [100, 200, 500, 1000],
+            'clf__max_depth': [3,5,8,10]},
+            {
+            'pca__n_components': pca_range,
+            'clf': [XGBClassifier()],
+            'clf__n_estimators': [100, 200, 500, 1000],
             'clf__max_depth': [3,5,8,10]}]
     return parameters2
 
@@ -380,13 +440,14 @@ def dump_big_gridsearch(n_splits=2):
         x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
         print('starting grid search')
         score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
-        pipeline = Pipeline([('scale',StandardScaler()), ('pca', PCA()), ('clf', LogisticRegression())])
-        pca_range = list(range(15,35, 5))
-        parameters = [{
-                    'pca__n_components': pca_range,
-                    'clf': [XGBClassifier()],
-                    'clf__n_estimators': [100, 200, 500, 1000],
-                    'clf__max_depth': [3,5,8,10]}]
+        pipeline = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest()), ('pca', PCA()), ('lr', LogisticRegression())])
+        parameters = {
+        'kbest__score_func': [chi2, f_classif, mutual_info_classif],
+        'kbest__k': list(range(10, 45, 5)),
+        'pca__n_components': [.6, .7, .8, .9, .95],
+        'lr__penalty': ['l1', 'l2'],
+        'lr__C': [1, .1, .01, .001, .0001]
+        }
         grid_search = GridSearchCV(pipeline,
                                  param_grid=parameters,
                                  verbose=1,
@@ -395,8 +456,8 @@ def dump_big_gridsearch(n_splits=2):
                                  scoring='roc_auc')
         grid_search.fit(x, y)
         grid_search_results = pd.DataFrame(grid_search.cv_results_)
-        pickle.dump(grid_search, open('../picklehistory/'+table_name+'_grid_xg_object_v1.pkl', 'wb'))
-        pickle.dump(grid_search_results, open('../picklehistory/'+table_name+'_grid_xg_results_v1.pkl', 'wb'))
+        pickle.dump(grid_search, open('../picklehistory/'+table_name+'_grid_lr_object_v1.pkl', 'wb'))
+        pickle.dump(grid_search_results, open('../picklehistory/'+table_name+'_grid_lr_results_v1.pkl', 'wb'))
 
 def load_gridsearch(file_name):
     '''
@@ -431,7 +492,7 @@ def var_model_pipe_cross_val(x, y, df, pipes, n_splits=2):
 def specific_model_gran_pipe_cross_val(x, y, df, pipe_name, pipe, n_splits=2):
     '''
     cross validates models and returns prediction results
-    '''(0, 1)
+    '''
     ts = TimeSeriesSplit(n_splits=n_splits)
     prediction_df = pd.DataFrame([])
     for split_index, (train_index, test_index) in enumerate(ts.split(x)):
@@ -491,37 +552,6 @@ def calc_and_print_prediction_stats(prediction_df):
         print(classification_report(y_true, y_pred))
         print('confusion matrix: ')
         print(pd.crosstab(y_true, y_pred))
-
-def live_predict(grid_pickle='../picklehistory/grid_search_big_object_v1.pkl'):
-    '''
-    danger, warning, success based on proba distribution
-    '''
-    count=0
-    while True:
-        table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
-        start_time_stamps = ['2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2006-01-01T00:00:00.000000000Z', '2012-01-01T00:00:00.000000000Z', '2017-05-01T00:00:00.000000000Z']
-        grid_search_res = load_gridsearch(grid_pickle)
-        model = grid_search_res.best_estimator_
-        results_df = pd.DataFrame([])
-        for i in range(len(table_names)):
-            data = return_data_table_gt_time(table_names[i], start_time_stamps[i])
-            df = clean_data(data)
-            df = add_target(df)
-            df = add_features(df)
-            x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
-            model.fit(x, y)
-            y_pred = model.predict(last_x_pred)
-            y_pred_proba = model.predict_proba(last_x_pred)
-            last_x_ohlcv.reset_index(inplace=True)
-            last_x_ohlcv['table_name'] = table_names[i]
-            last_x_ohlcv['y_pred'] = y_pred
-            last_x_ohlcv['y_pred'] = last_x_ohlcv['y_pred'].map({1:'Up', 0:'Down'})
-            last_x_ohlcv['y_pred_proba'] = y_pred_proba[:,1]
-            results_df = results_df.append(last_x_ohlcv)
-        pickle.dump(results_df, open('../picklehistory/live_results_df.pkl', 'wb'))
-        count+=1
-        print('completed prediction: {}'.format(count))
-        time.sleep(1)
 
 def plot_compare_scalers(df):
     '''
@@ -620,8 +650,8 @@ def all_steps_simple_feature_importance():
     df = add_features(df)
     print('added features')
     x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
-    chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lsvc, model_lsvc, gbc, model_gbc = calc_feature_importance(x, y)
-    return chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lsvc, model_lsvc, gbc, model_gbc
+    chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp = calc_feature_importance(x, y)
+    return chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp
 
 def all_steps_simple_cross_val():
     df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
@@ -682,14 +712,59 @@ def all_steps_gran_cross_val():
 
     return prediction_df_nn, prediction_df_xg
 
+def live_predict(grid_pickle='../picklehistory/grid_search_big_object_v1.pkl'):
+    '''
+    danger, warning, success based on proba distribution
+    '''
+    count=0
+    while True:
+        table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+        start_time_stamps = ['2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2006-01-01T00:00:00.000000000Z', '2012-01-01T00:00:00.000000000Z', '2017-05-01T00:00:00.000000000Z']
+        grid_search_res = load_gridsearch(grid_pickle)
+        model = grid_search_res.best_estimator_
+        results_df = pd.DataFrame([])
+        for i in range(len(table_names)):
+            data = return_data_table_gt_time(table_names[i], start_time_stamps[i])
+            df = clean_data(data)
+            df = add_target(df)
+            df = add_features(df)
+            x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
+            model.fit(x, y)
+            y_pred = model.predict(last_x_pred)
+            y_pred_proba = model.predict_proba(last_x_pred)
+            last_x_ohlcv.reset_index(inplace=True)
+            last_x_ohlcv['table_name'] = table_names[i]
+            last_x_ohlcv['y_pred'] = y_pred
+            last_x_ohlcv['y_pred'] = last_x_ohlcv['y_pred'].map({1:'Up', 0:'Down'})
+            last_x_ohlcv['y_pred_proba'] = y_pred_proba[:,1]
+            results_df = results_df.append(last_x_ohlcv)
+        pickle.dump(results_df, open('../picklehistory/live_results_df.pkl', 'wb'))
+        count+=1
+        print('completed prediction: {}'.format(count))
+        time.sleep(1)
+
 if __name__ == '__main__':
-    live
-    #chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lsvc, model_lsvc, gbc, model_gbc = all_steps_simple_feature_importance()
+
+    dump_big_gridsearch()
+
+    # df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
+    # print('got data')
+    # df = add_target(df)
+    # print('added targets')
+    # df = add_features(df)
+    # print(df.shape)
+    # print('added features')
+    # x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
+    # print(x.shape, y.shape)
+
+
+    #live_predict()
+    #chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp = all_steps_simple_feature_importance()
 
 
     #prediction_df_nn, prediction_df_xg = all_steps_gran_cross_val()
 
-    #dump_big_gridsearch()
+    dump_big_gridsearch()
 '''
 proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
 for pred_col in proba_cols:
