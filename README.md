@@ -63,7 +63,7 @@ time | volume | open | high | low | close | complete
 
 http://developer.oanda.com/rest-live-v20/introduction/
 
-Future Opportunities: Incorporate more data, economic calendar, historical position ratios, bid ask spreads, commitments of traders, orderbook...
+Future Opportunities: Incorporate more data, economic calendar, historical position ratios, bid ask spreads, commitments of traders, orderbook, tick data...
 
 # Target
 

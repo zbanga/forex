@@ -242,12 +242,20 @@ def clean_data(data):
     df.drop('complete', axis=1, inplace=True)
     return df
 
+def from_postgres_to_pickle_df(table_name):
+    data = return_data_table(table_name)
+    df = clean_data(data)
+    print(table_name, df.shape)
+    df.to_pickle('../data/'+table_name)
+
 
 
 
 if __name__ == '__main__':
 
-    get_data_continuous_multiple_time_stamps()
+    # data = return_data_table('eur_usd_d')
+    # df = clean_data(data)
+    #get_data_continuous_multiple_time_stamps()
 
     #
     # granularities = ['S5', 'S10', 'S15', 'S30', 'M2', 'M4', 'M5', 'M10', 'M15', 'M30', 'H1', 'H2', 'H3','H4', 'H6', 'H8', 'H12', 'D']
