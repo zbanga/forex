@@ -283,14 +283,14 @@ def get_variety_pipes():
     return pipes
 
 def store_pipe_params():
-    pipeline = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest()), ('pca', PCA()), ('lr', LogisticRegression())])
+    pipeline = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest()), ('pca', PCA()), ('clf', LogisticRegression())])
     parameters = [{
     'clf': [LogisticRegression()],
     'pca__n_components': [.6, .7, .8, .9, .95],
     'kbest__score_func': [chi2, f_classif, mutual_info_classif],
     'kbest__k': list(range(10, 45, 5)),
-    'lr__penalty': ['l1', 'l2'],
-    'lr__C': [1, .1, .01, .001, .0001]
+    'clf__penalty': ['l1', 'l2'],
+    'clf__C': [1, .1, .01, .001, .0001]
     },{
     'clf': [XGBClassifier()],
     'pca__n_components': [.6, .7, .8, .9, .95],
@@ -683,7 +683,9 @@ def live_predict(grid_pickle='../picklehistory/grid_search_big_object_v1.pkl'):
         time.sleep(1)
 
 if __name__ == '__main__':
+
     dump_big_gridsearch()
+
     # prediction_dfs = all_steps_for_grans_one_model_cross_val()
     # for_mods_plot_roc_returns(prediction_dfs)
 
@@ -704,7 +706,7 @@ if __name__ == '__main__':
 
     #prediction_df_nn, prediction_df_xg = all_steps_gran_cross_val()
 
-    #dump_big_gridsearch()
+
 '''
 proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
 for pred_col in proba_cols:
