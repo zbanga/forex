@@ -3,9 +3,9 @@
 
 # **EUR/USD Foreign Exchange Rate Prediction**
 
-Using neural networks and boosted trees to predict the direction of of the EUR/USD foreign exchange rates.
+I am using logistic regression, neural networks, and boosted trees to predict the future direction of of the EUR/USD foreign exchange rates.
 
-Web App: link
+LINK TO PREDICTION WEBSITE
 
 ## Table of Contents
 1. [Data](#data)
@@ -44,19 +44,19 @@ D | 1 day candlesticks, day alignment
 W | 1 week candlesticks, aligned to start of week
 M | 1 month candlesticks, aligned to first day of the month
 
-#### Minute Candles Example
-time | volume | open | high | low | close | complete
---- | --- | --- | --- | --- | --- | ---
-2005-01-02 20:46:00 | 1 | 1.356100 | 1.356100 | 1.356100 | 1.356100 | True
-2005-01-02 20:47:00 | 3 | 1.356000 | 1.356800 | 1.356000 | 1.356100 | True
-2005-01-02 20:48:00 | 1 | 1.356000 | 1.356000 | 1.356000 | 1.356000 | True
-2005-01-02 20:49:00 | 5 | 1.356100 | 1.356600 | 1.355800 | 1.355800 | True
-2005-01-02 20:50:00 | 2 | 1.355700 | 1.355700 | 1.355600 | 1.355600 | True
-2005-01-02 20:51:00 | 3 | 1.355600 | 1.355600 | 1.355200 | 1.355200 | True
-2005-01-02 20:52:00 | 4 | 1.355500 | 1.356100 | 1.355100 | 1.355100 | True
-2005-01-02 20:53:00 | 4 | 1.355200 | 1.355200 | 1.354600 | 1.354900 | True
-2005-01-02 20:54:00 | 8 | 1.355500 | 1.355500 | 1.354100 | 1.354100 | True
-2005-01-02 20:55:00 | 2 | 1.354100 | 1.355000 | 1.354100 | 1.355000 | True
+#### 15 Minute Candles Example
+| time | volume | open | high | low | close | complete |
+|---------|--------|----------|----------|----------|----------|----------|
+| 6:45:00 | 473 | 1.346250 | 1.348050 | 1.345950 | 1.348050 | True |
+| 7:00:00 | 481 | 1.347950 | 1.348250 | 1.347350 | 1.348150 | True |
+| 7:15:00 | 303 | 1.348150 | 1.348350 | 1.347300 | 1.347900 | True |
+| 7:30:00 | 290 | 1.348000 | 1.350850 | 1.348000 | 1.350750 | True |
+| 7:45:00 | 373 | 1.350650 | 1.353250 | 1.350250 | 1.352800 | True |
+| 8:00:00 | 290 | 1.352800 | 1.354700 | 1.352500 | 1.352500 | True |
+| 8:15:00 | 219 | 1.352400 | 1.353000 | 1.351250 | 1.351570 | True |
+| 8:30:00 | 206 | 1.351670 | 1.351900 | 1.350470 | 1.351700 | True |
+| 8:45:00 | 186 | 1.351750 | 1.353270 | 1.351750 | 1.353070 | True |
+| 9:00:00 | 462 | 1.352970 | 1.353070 | 1.351420 | 1.352820 | True |
 
 ### 1 Month Candles with Volume
 ![alttext](/imgs/1monthcandles.png "Forex Candles")
@@ -67,20 +67,20 @@ Future Opportunities: Incorporate more data, economic calendar, historical posit
 
 # Target
 
-I am using a classification target (1 or 0) of whether or not the close price of the next candle is higher or lower than the close price of the current candle. I also calculated the log returns log(close n+1 / close n) to be used for calculating returns.
+I am using a binary classification target (1 / 0) of whether or not the close price of the next candle is higher or lower than the close price of the current candle. I also calculated the log returns log(close n+1 / close n) that are used for calculating returns.
 
 | time | volume | open | high | low | close | log_returns | log_returns_shifted | target |
-|---------------------|--------|----------|----------|----------|----------|-------------|---------------------|--------|
-| 0:00 | 29 | 1.137860 | 1.137960 | 1.137680 | 1.137920 | nan | 0.000097 | 1 |
-| 1:00 | 16 | 1.137880 | 1.138030 | 1.137800 | 1.138030 | 0.000097 | 0.000132 | 1 |
-| 2:00 | 11 | 1.138060 | 1.138210 | 1.138040 | 1.138180 | 0.000132 | 0.000000 | 1 |
-| 3:00 | 15 | 1.138160 | 1.138230 | 1.138130 | 1.138180 | 0.000000 | 0.000000 | 1 |
-| 4:00 | 8 | 1.138180 | 1.138200 | 1.138140 | 1.138180 | 0.000000 | 0.000123 | 1 |
-| 5:00 | 4 | 1.138220 | 1.138320 | 1.138220 | 1.138320 | 0.000123 | -0.000018 | 0 |
-| 6:00 | 14 | 1.138280 | 1.138300 | 1.138220 | 1.138300 | -0.000018 | -0.000018 | 0 |
-| 7:00 | 10 | 1.138340 | 1.138340 | 1.138270 | 1.138280 | -0.000018 | 0.000325 | 1 |
-| 8:00 | 42 | 1.138320 | 1.138720 | 1.138320 | 1.138650 | 0.000325 | 0.000026 | 1 |
-| 9:00 | 12 | 1.138620 | 1.138720 | 1.138620 | 1.138680 | 0.000026 | -0.000123 | 0 |
+|----------|--------|----------|----------|----------|----------|-------------|---------------------|--------|
+| 18:15:00 | 1 | 1.356000 | 1.356000 | 1.356000 | 1.356000 | nan | 0.000000 | 1 |
+| 18:30:00 | 1 | 1.356000 | 1.356000 | 1.356000 | 1.356000 | 0.000000 | 0.000516 | 1 |
+| 18:45:00 | 4 | 1.356700 | 1.356800 | 1.356500 | 1.356700 | 0.000516 | 0.000147 | 1 |
+| 19:00:00 | 5 | 1.356900 | 1.357000 | 1.356900 | 1.356900 | 0.000147 | -0.000959 | 0 |
+| 19:15:00 | 27 | 1.356500 | 1.356900 | 1.355600 | 1.355600 | -0.000959 | 0.000221 | 1 |
+| 19:30:00 | 6 | 1.355600 | 1.356500 | 1.355600 | 1.355900 | 0.000221 | -0.000074 | 0 |
+| 19:45:00 | 6 | 1.356000 | 1.356000 | 1.355800 | 1.355800 | -0.000074 | 0.000000 | 1 |
+| 20:00:00 | 12 | 1.355900 | 1.356100 | 1.355800 | 1.355800 | 0.000000 | 0.000000 | 1 |
+| 20:15:00 | 15 | 1.355700 | 1.355900 | 1.355600 | 1.355800 | 0.000000 | 0.000148 | 1 |
+| 20:30:00 | 27 | 1.355900 | 1.356000 | 1.355800 | 1.356000 | 0.000148 | -0.001033 | 0 |
 
 ### Log Returns Distribution vs. Arithmetic Returns Distribution
 ![alttext](/imgs/returns.png "Forex Returns")
@@ -91,7 +91,7 @@ Future Opportunities: Incorporate regression not just classification.
 
 Below are the technical analysis features that were added to the data.
 
-### No parameters
+### Technical Indicators without Parameters
 
 | Group | Short Name | Name | Parameters | Output |
 |-----------------------|--------------|---------------------------------------------|------------|-----------------------|
@@ -106,7 +106,9 @@ Below are the technical analysis features that were added to the data.
 | Cycle Indicators | HT_TRENDMODE | Hilbert Transform - Trend vs Cycle Mode | [] | [integer] |
 | Volatility Indicators | TRANGE | True Range | [] | [real] |
 
-### Parameters used were a range every 10 from 5 to 45 inclusive
+### Technical Indicators with Only Timeperiod Parameter
+
+I used each technical indicator with inputs 5, 15, 25, 35, and 45.
 
 | Group | Short Name | Name | Parameters | Output |
 |-----------------------|---------------------|---------------------------------------------------|------------------|----------------------|
@@ -149,7 +151,7 @@ Below are the technical analysis features that were added to the data.
 | Statistic Functions | LINEARREG_SLOPE | Linear Regression Slope | [timeperiod: 14] | [real] |
 | Statistic Functions | TSF | Time Series Forecast | [timeperiod: 14] | [real] |
 
-### Kept standard parameters for the others
+### Technical Indicators with more than 1 Parameter
 
 | Group | Short Name | Name | Parameters | Output |
 |---------------------|------------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
@@ -176,38 +178,92 @@ https://mrjbq7.github.io/ta-lib/funcs.html
 
 Future Opportunities: More technical indicators with varying parameters.
 
-# Exploratory Analysis
+# Exploratory Data Analysis
 
-Feature importances with SelectKBest
-LogisticRegresssion and Regularization with the L1 Lasso at different rates to see which features survive!
-Tree Based selection can be used to see which features give the model the highest information gain.
-Use PCA to reduce the dimensions and solve for the curse of dimensionality and the colinearity between the features.
+I calculated feature importance of the technical indicators with a variety of methods using Chi Squared Test, ANOVA F-value test, Mutual Information test, Logistic Regression with Regularization, and Tree Based Gini Information Gain feature importance.
 
-Use these tools in a pipeline to prevent data leakage and allow for gridsearching.
+### Chi Squared Calculation for Feature importances
 
-![alttext](/imgs/PCA.png "PCA")
+| Indicator | Chi Importance |
+|------------|----------------|
+| STOCHRSI_1 | 8.14 |
+| WILLR_5 | 7.56 |
+| STOCHF_1 | 7.56 |
+| WILLR_15 | 7.22 |
+| WILLR_25 | 6.27 |
+| WILLR_35 | 5.52 |
+| SAREXT | 4.21 |
+| BOP | 3.97 |
+| WILLR_45 | 3.93 |
+| CMO_5 | 3.59 |
 
-![alttext](/imgs/PCA2.png "PCA")
+### ANOVA F-value Calculation for Feature Importance
+
+| Indicator | ANOVA Importance |
+|-----------|------------------|
+| RSI_5 | 46.6 |
+| CMO_5 | 46.6 |
+| WILLR_15 | 45.52 |
+| STOCHF_1 | 44.85 |
+| WILLR_5 | 44.85 |
+| WILLR_25 | 38.64 |
+| WILLR_35 | 33.69 |
+| RSI_15 | 29.07 |
+| CMO_15 | 29.07 |
+| BOP | 27.02 |
+
+### Mutual Information Calculation for Feature Importance
+
+| Indicator | Mutual Info Importance |
+|------------------------|------------------------|
+| LINEARREG_ANGLE_15 | 0.024 |
+| LINEARREG_SLOPE_15 | 0.024 |
+| CCI_35 | 0.021 |
+| CMO_45 | 0.019 |
+| WILLR_25 | 0.019 |
+| RSI_45 | 0.019 |
+| TEMA_35 | 0.018 |
+| WILLR_5 | 0.016 |
+| LINEARREG_INTERCEPT_15 | 0.016 |
+| ADOSC | 0.015 |
+
+
+### Explained Variance of Features
+
+![alttext](/imgs/pca_exp_var_m15.png "PCA Exp Variance")
+
+### PCA the Features to 2 Dimensions to Observe Separability
+
+![alttext](/imgs/pca_2_m15.png "PCA 2")
 
 Future Opportunities: Try other dimensionality reduction algorithms (t-sne) and other feature selection methods.
 
 # Modeling
 
-Spin up the most expensive AWS EC2 instances and gridsearch cross validate (train / test split) each pipeline with a variety of parameters for each for each candle granularity and take the model with the highest score.
-Customized the gridsearch scoring function to maximize returns.
+I created data transformation and modeling pipelines that were used to gridsearch cross validated the models and preventing data leakage. The data transformation steps included scaling, selecting the best features, and dimensionality reduction. Logistic regression, neural networks, and boosted trees were used for the models. Each step in the pipeline has a variety of parameters that can be tuned. I used a powerful Amazon Web Service EC2 server to do the gridsearch parameter optimization in parallel. Both ROC_AUC and a custom % Return scoring functions were used for gridsearching.
 
-Neural Network and XGBoost Classifier
-
-Future Opportunities: Optomize the gridsearch scoring function to incorporate other financial metrics including alpha, beta, max drawdown, etc.
+Future Opportunities: Optimize the gridsearch scoring function to incorporate other financial metrics including alpha, beta, max drawdown, etc.
 
 # Results
-
-Look are predicted probability by models
-Calculate the returns and the classification metrics including a confusion matrix, accuracy, precision, recall, roc curve.
 
 ![alttext](/imgs/BADROC.png "Bad ROC")
 
 ![alttext](/imgs/calcreturns.png "Bad ROC")
+
+### Logistic Regression
+
+![alttext](/imgs/lr_gran_auc.png "Logistic Regression ROC")
+![alttext](/imgs/lr_gran_returns.png "Logistic Regression Returns")
+
+### Neural Network
+
+![alttext](/imgs/nn_gran_auc.png "Neural Network ROC")
+![alttext](/imgs/nn_gran_returns.png "Neural Network Returns")
+
+### XGBoost Classifier
+
+![alttext](/imgs/xg_gran_auc.png "XGBoost ROC")
+![alttext](/imgs/xg_gran_returns.png "XGBoost Returns")
 
 Future Opportunities: Stack classification and regression models. Tune a trading strategy based upon probabilities. Use a proper backtesting library incorporating bid / ask spreads, trading fees. Paper Trade.
 

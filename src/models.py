@@ -48,6 +48,7 @@ import psycopg2 as pg2
 from sqlalchemy import create_engine
 from oandadatapostgres import return_data_table_gt_time, clean_data
 plt.style.use('ggplot')
+plt.rcParams.update({'font.size': 16})
 
 '''
 todo
@@ -192,16 +193,16 @@ def calc_feature_importance(x, y):
     '''
     http://scikit-learn.org/stable/modules/feature_selection.html#feature-selection
     '''
-    chi_k = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest(chi2, k=30))])
+    chi_k = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest(chi2, k=10))])
     chi_k.fit(x, y)
     chi_feat_imp = pd.DataFrame(chi_k.steps[1][1].scores_, index=x.columns).sort_values(by=0, ascending=False)
-    f_cl_k = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest(f_classif, k=30))])
+    f_cl_k = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest(f_classif, k=10))])
     f_cl_k.fit(x, y)
     f_cl_k_feat_imp = pd.DataFrame(f_cl_k.steps[1][1].scores_, index=x.columns).sort_values(by=0, ascending=False)
-    mut_i_c = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest(mutual_info_classif, k=30))])
+    mut_i_c = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest(mutual_info_classif, k=10))])
     mut_i_c.fit(x, y)
     mut_i_c_feat_imp = pd.DataFrame(mut_i_c.steps[1][1].scores_, index=x.columns).sort_values(by=0, ascending=False)
-    lr = LogisticRegression(C=0.01, penalty="l1", dual=False).fit(x, y)
+    lr = LogisticRegression(C=1, penalty="l1", dual=False).fit(x, y)
     model_lr = SelectFromModel(lr, prefit=True)
     x_new = model_lr.transform(x)
     print(x_new.shape)
@@ -216,6 +217,9 @@ def calc_feature_importance(x, y):
     model_gbc = SelectFromModel(gbc, prefit=True)
     x_new = model_gbc.transform(x)
     print(x_new.shape)
+    rfc = RandomForestClassifier(n_estimators=500)
+    rfc.fit(x, y)
+    print(rfc.feature_importances_)
 
     # lr = LogisticRegression()
     # rfecv = RFECV(estimator=lr, step=1, cv=TimeSeriesSplit(2), scoring='roc_auc', n_jobs=-1)
@@ -227,7 +231,7 @@ def calc_feature_importance(x, y):
     # plt.plot(range(1, len(rfecv.grid_scores_) + 1), rfecv.grid_scores_)
     # plt.show()
 
-    return chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp
+    return x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc
 
 def get_nn(num_inputs=20):
     '''
@@ -286,23 +290,23 @@ def store_pipe_params():
     pipeline = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest()), ('pca', PCA()), ('clf', LogisticRegression())])
     parameters = [{
     'clf': [LogisticRegression()],
-    'pca__n_components': [.6, .7, .8, .9, .95],
+    'pca__n_components': [.6, .7, .8, .9, .95, 1],
     'kbest__score_func': [chi2, f_classif, mutual_info_classif],
-    'kbest__k': list(range(10, 45, 5)),
+    'kbest__k': list(range(10, 60, 5)),
     'clf__penalty': ['l1', 'l2'],
     'clf__C': [1, .1, .01, .001, .0001]
     },{
     'clf': [XGBClassifier()],
     'pca__n_components': [.6, .7, .8, .9, .95],
     'kbest__score_func': [chi2, f_classif, mutual_info_classif],
-    'kbest__k': list(range(10, 45, 5)),
+    'kbest__k': list(range(10, 60, 5)),
     'clf__n_estimators': [100, 200, 500, 1000],
     'clf__max_depth': [3,5,8,10]},
     {
     'clf': [MLPClassifier()],
     'pca__n_components': [.7, .8, .9, .95],
     'kbest__score_func': [chi2, f_classif, mutual_info_classif],
-    'kbest__k': list(range(10, 45, 5)),
+    'kbest__k': list(range(10, 60, 5)),
     'clf__hidden_layer_sizer': [(100,1), (100,2), (100,3)],
     'clf__activation': ['logistic', 'tanh', 'relu'],
     'clf__learning_rate_init': [.0001],
@@ -362,6 +366,7 @@ def load_gridsearch(file_name):
 
 def get_lr_grids():
     table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+    pipes = {}
     for table in table_names:
         table_upper = table.upper()
         pipes[table+'_lr'] = load_gridsearch('../picklehistory/lr/'+table_upper+'_grid_lr_object_v1.pkl').best_estimator_
@@ -369,16 +374,18 @@ def get_lr_grids():
 
 def get_nn_grids():
     table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+    pipes = {}
     for table in table_names:
         table_upper = table.upper()
-        pipes[table+'_nn'] = load_gridsearch('../picklehistory/nn/'+table_upper+'_grid_lr_object_v1.pkl').best_estimator_
+        pipes[table+'_nn'] = load_gridsearch('../picklehistory/nn/'+table_upper+'_grid_nn_object_v1.pkl').best_estimator_
     return pipes
 
 def get_xg_grids():
     table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
+    pipes = {}
     for table in table_names:
         table_upper = table.upper()
-        pipes[table+'_xg'] = load_gridsearch('../picklehistory/xg/'+table_upper+'_grid_lr_object_v1.pkl').best_estimator_
+        pipes[table+'_xg'] = load_gridsearch('../picklehistory/xg/'+table_upper+'_grid_xg_object_v1.pkl').best_estimator_
     return pipes
 
 def var_model_one_gran_pipe_cross_val(x, y, df, pipes, n_splits=2):
@@ -523,8 +530,8 @@ def plot_dim_2(x, y):
     x_new = pca.fit_transform(x)
     x_new_one = x_new[y==1]
     x_new_zero = x_new[y==0]
-    ax.scatter(x_new_one[:,0], x_new_one[:,1], c='green', label='up', alpha=.1)
-    ax.scatter(x_new_zero[:,0], x_new_zero[:,1], c='orange', label='down', alpha=.1)
+    ax.scatter(x_new_one[:,0], x_new_one[:,1], c='green', label='up', alpha=.05)
+    ax.scatter(x_new_zero[:,0], x_new_zero[:,1], c='orange', label='down', alpha=.05)
     plt.legend(loc='best')
 
 def plot_line_data(price_series, figtitle):
@@ -565,15 +572,15 @@ def plot_pred_proba_hist(plot_title, y_pred_proba):
     ax.set_title(plot_title)
 
 def all_steps_simple_feature_importance():
-    df = get_data('EUR_USD_15', datetime(2016,4,1), datetime(2016,6,1))
+    df = get_data('EUR_USD_M15', datetime(2012,1,1), datetime(2018,1,1))
     print('got data')
     df = add_target(df)
     print('added targets')
     df = add_features(df)
     print('added features')
     x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
-    chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp = calc_feature_importance(x, y)
-    return chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp
+    x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc = calc_feature_importance(x, y)
+    return x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc
 
 def all_steps_simple_cross_val():
     df = get_data('EUR_USD_M15', datetime(2012,1,1), datetime(2018,1,1))
@@ -611,7 +618,7 @@ def all_steps_simple_cross_val():
 def all_steps_for_grans_one_model_cross_val():
     table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
     start_time_stamps = [datetime(2000,1,1), datetime(2000,1,1), datetime(2000,1,1), datetime(2000,1,1), datetime(2006,1,1), datetime(2012,1,1), datetime(2017,5,1)]
-    pipes_xg = get_xg_pipes()
+    pipes_xg = get_xg_grids()
     prediction_dfs = {}
     for i in range(len(table_names)):
         gran = table_names[i]
@@ -683,11 +690,13 @@ def live_predict(grid_pickle='../picklehistory/grid_search_big_object_v1.pkl'):
         time.sleep(1)
 
 if __name__ == '__main__':
+    #for_gran_plot_pca()
 
-    dump_big_gridsearch()
+    #dump_big_gridsearch()
 
-    # prediction_dfs = all_steps_for_grans_one_model_cross_val()
-    # for_mods_plot_roc_returns(prediction_dfs)
+    prediction_dfs = all_steps_for_grans_one_model_cross_val()
+    for_mods_plot_roc_returns(prediction_dfs)
+
 
     # df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
     # print('got data')
@@ -701,30 +710,30 @@ if __name__ == '__main__':
 
 
     #live_predict()
-    #chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp = all_steps_simple_feature_importance()
+    #x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc = all_steps_simple_feature_importance()
 
 
     #prediction_df_nn, prediction_df_xg = all_steps_gran_cross_val()
 
 
-'''
-proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
-for pred_col in proba_cols:
-    sp_ind = re.search('_\d_', pred_col).group(0)[1]
-    plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
-plt.show()
-return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' or col[:3] == 'log']
-for return_col in return_cols:
-    plot_prediction_returns(prediction_df[return_col])
-plt.show()
-proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
-for return_col in proba_cols:
-    plot_pred_proba_hist(return_col, prediction_df[return_col])
-plt.show()
-plot_compare_scalers(df)
-plt.show()
-plot_dim_2(x, y)
-plt.show()
-plot_pca_elbow(x)
-plt.show()
-'''
+    '''
+    proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
+    for pred_col in proba_cols:
+        sp_ind = re.search('_\d_', pred_col).group(0)[1]
+        plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
+    plt.show()
+    return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' or col[:3] == 'log']
+    for return_col in return_cols:
+        plot_prediction_returns(prediction_df[return_col])
+    plt.show()
+    proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
+    for return_col in proba_cols:
+        plot_pred_proba_hist(return_col, prediction_df[return_col])
+    plt.show()
+    plot_compare_scalers(df)
+    plt.show()
+    plot_dim_2(x, y)
+    plt.show()
+    plot_pca_elbow(x)
+    plt.show()
+    '''
