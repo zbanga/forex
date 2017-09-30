@@ -46,18 +46,15 @@ import sys
 import glob
 import psycopg2 as pg2
 from sqlalchemy import create_engine
-from oandadatapostgres import return_data_table_gt_time, clean_data
+from oandadatapostgres import *
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 16})
 
 '''
 todo
 
-live data pipeline and model prediction. incorporate new pickled models. nn and xg.
-website clean with tradingview apps
-get model probability prediction distributions. only trade if proba is standard deviations away. graph historical distributions and prediction.
-feature selection with trees, kbest, feature selection sklearn stuff.
-recalculate return distriubtions, pca variance n components, pca 2, roc, returns
+live trade with api
+clean up and refactor all code
 
 what is the state of the art?
 what are the technical indicators?
@@ -133,34 +130,37 @@ def add_features(df):
     '''
     no_params_df, only_time_period_df, other_param_df = feature_dfs()
     ohlcv = {
-    'open': df['open'],
-    'high': df['high'],
-    'low': df['low'],
-    'close': df['close'],
-    'volume': df['volume'].astype(float)
-    }
+        'open': df['open'],
+        'high': df['high'],
+        'low': df['low'],
+        'close': df['close'],
+        'volume': df['volume'].astype(float)
+        }
     for fun in no_params_df['Name'].values:
         res = getattr(talib.abstract, fun)(ohlcv)
-        if len(res) > 10:
-            df[fun] = res
+        output = no_params_df[no_params_df['Name']==fun]['Output Names'].values[0]
+        if len(output) == 1:
+            df[fun+'_'+output[0].upper()] = res
         else:
             for i, val in enumerate(res):
-                df[fun+'_'+str(i+1)] = val
+                df[fun+'_'+output[i].upper()] = val
     for fun in only_time_period_df['Name'].values:
+        output = only_time_period_df[only_time_period_df['Name']==fun]['Output Names'].values[0]
         for timeperiod in range(5, 55, 10):
             res = getattr(talib.abstract, fun)(ohlcv, timeperiod=timeperiod)
-            if len(res) > 10:
-                df[fun+'_'+str(timeperiod)] = res
+            if len(output) == 1:
+                df[fun+'_'+output[0].upper()] = res
             else:
                 for i, val in enumerate(res):
-                    df[fun+'_'+str(timeperiod)+'_'+str(i+1)] = val
+                    df[fun+'_'+str(timeperiod)+'_'+output[i].upper()] = val
     for fun in other_param_df['Name'].values:
         res = getattr(talib.abstract, fun)(ohlcv)
-        if len(res) > 10:
-            df[fun] = res
+        output = other_param_df[other_param_df['Name']==fun]['Output Names'].values[0]
+        if len(output) == 1:
+            df[fun+'_'+output[0].upper()] = res
         else:
             for i, val in enumerate(res):
-                df[fun+'_'+str(i+1)] = val
+                df[fun+'_'+output[i].upper()] = val
     return df
 
 def split_data_x_y(df):
@@ -202,7 +202,7 @@ def calc_feature_importance(x, y):
     mut_i_c = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('kbest', SelectKBest(mutual_info_classif, k=10))])
     mut_i_c.fit(x, y)
     mut_i_c_feat_imp = pd.DataFrame(mut_i_c.steps[1][1].scores_, index=x.columns).sort_values(by=0, ascending=False)
-    lr = LogisticRegression(C=1, penalty="l1", dual=False).fit(x, y)
+    lr = LogisticRegression(C=1, penalty="l2", dual=False).fit(x, y)
     model_lr = SelectFromModel(lr, prefit=True)
     x_new = model_lr.transform(x)
     print(x_new.shape)
@@ -233,7 +233,15 @@ def calc_feature_importance(x, y):
 
     return x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc
 
-def get_nn(num_inputs=20):
+def calc_feature_importance_lr(x, y):
+    lr = Pipeline([('scale',StandardScaler()), ('clf', LogisticRegression(penalty='l2', C=1))])
+    lr.fit(x, y)
+    model_lr = SelectFromModel(lr.steps[1][1], prefit=True)
+    x_new = model_lr.transform(x)
+    print(x_new.shape)
+    return x, y, lr, model_lr
+
+def get_nn(num_inputs=30):
     '''
     build keras/tensorflow nn
     '''
@@ -262,15 +270,24 @@ def get_nn(num_inputs=20):
 def get_variety_pipes():
     '''
     builds pipelines to cross val and gridsearch
+    {'clf': MLPClassifier(activation='logistic', alpha=0.0001, batch_size=500, beta_1=0.9,
+       beta_2=0.999, early_stopping=True, epsilon=1e-08,
+       hidden_layer_sizes=(50, 2), learning_rate='constant',
+       learning_rate_init=0.001, max_iter=2000, momentum=0.9,
+       nesterovs_momentum=True, power_t=0.5, random_state=None,
+       shuffle=False, solver='adam', tol=0.0001, validation_fraction=0.1,
+       verbose=False, warm_start=False), 'clf__activation': 'logistic', 'clf__alpha': 1e-06, 'clf__batch_size': 200,
+       'clf__early_stopping': True, 'clf__hidden_layer_sizes': (50, 1),
+       'clf__max_iter': 2000, 'clf__shuffle': False, 'pca__n_components': 15}
     '''
-    lr = LogisticRegression
+    lr = LogisticRegression(penalty='l2', C=1.0)
     dt = DecisionTreeClassifier()
     rf = RandomForestClassifier()
     ab = AdaBoostClassifier()
-    gb = GradientBoostingClassifier()
-    kc = KerasClassifier(build_fn=get_nn, epochs=100, batch_size=500, verbose=0)
-    xg = XGBClassifier(max_depth=8, n_estimators=1000)
-    ml = MLPClassifier(hidden_layer_sizes=(100,3), activation='logistic', learning_rate_init=0.0001, batch_size=500, max_iter=5000, early_stopping=True)
+    gb = GradientBoostingClassifier(n_estimators=100)
+    # kc = KerasClassifier(build_fn=get_nn, epochs=100, batch_size=500, verbose=0)
+    xg = XGBClassifier(max_depth=3, n_estimators=100)
+    ml = MLPClassifier(hidden_layer_sizes=(50,1), activation='logistic', learning_rate_init=0.001, batch_size=200, max_iter=5000, early_stopping=True, shuffle=False)
     svc_r = SVC(kernel='rbf', probability=True)
     svc_l = SVC(kernel='linear', probability=True)
     svc_p = SVC(kernel='poly', probability=True)
@@ -279,11 +296,19 @@ def get_variety_pipes():
     gpc = GaussianProcessClassifier(n_jobs=-1)
     gnb = GaussianNB()
     qda = QuadraticDiscriminantAnalysis()
-    pipe = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA(.95)), ('kbest', SelectKBest(20)), ('clf', LogisticRegression())])
-    classifiers = [lr, dt, rf, ab, gb, kc, xg, ml, svc_r, svc_l, svc_p, svc_s, knc, gpc, gnb, qda]
-    pipes = {}
-    for clf in classifiers:
-        pipes[clf.__class__.__name__] = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('pca', PCA(.95)), ('kbest', SelectKBest(20)), ('clf', clf)])
+    lr_l2_c1 = Pipeline([('scale',StandardScaler()), ('clf', LogisticRegression(penalty='l2', C=1))])
+    # pca_lr_l1 = Pipeline([('pca', PCA(.99)), ('clf', LogisticRegression(penalty='l1', C=1))])
+    # pca_lr_l2 = Pipeline([('pca', PCA(.99)), ('clf', LogisticRegression(penalty='l2', C=1))])
+    # lr_l2_c1 = Pipeline([('clf', LogisticRegression(penalty='l2', C=1))])
+    # lr_mm_scale = Pipeline([('scale',MinMaxScaler()), ('clf', LogisticRegression(penalty='l2', C=1))])
+    # lr_ss_scale = Pipeline([('scale',StandardScaler()), ('clf', LogisticRegression())])
+    # lr_ss_scale = Pipeline([('scale',StandardScaler()), ('pca', PCA(.99)), ('clf', gb)])
+    # classifiers = [lr, gb, ml]
+    pipes = {
+    'lr_l2_c1': lr_l2_c1,
+    }
+    # for clf in classifiers:
+    #     pipes[clf.__class__.__name__] = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('clf', clf)])
     return pipes
 
 def store_pipe_params():
@@ -346,6 +371,7 @@ def dump_big_gridsearch(n_splits=2):
         print('starting grid search')
         score_returns = make_scorer(gridsearch_score_returns, greater_is_better=True)
         pipeline, parameters = store_pipe_params()
+        parameters = parameters[2]
         grid_search = GridSearchCV(pipeline,
                                  param_grid=parameters,
                                  verbose=1,
@@ -512,7 +538,7 @@ def plot_prediction_returns(prediction_df):
     '''
     plot returns
     '''
-    return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' and col[-14] == '1']
+    return_cols = [col for col in prediction_df.columns if col[-12:] == 'pred_returns' or col[:11] == 'log_returns']
     for return_col in return_cols:
         pred_returns = prediction_df[return_col]
         cum_returns = pred_returns.cumsum().apply(np.exp)-1 #you can add log returns and then transpose back with np.exp
@@ -579,41 +605,27 @@ def all_steps_simple_feature_importance():
     df = add_features(df)
     print('added features')
     x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
-    x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc = calc_feature_importance(x, y)
-    return x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc
+    x, y, lr, model_lr = calc_feature_importance_lr(x, y)
+    return  x, y, lr, model_lr
 
-def all_steps_simple_cross_val():
-    df = get_data('EUR_USD_M15', datetime(2012,1,1), datetime(2018,1,1))
+def all_steps_for_models_cross_val():
+    df = get_data('EUR_USD_M15', datetime(2007,1,1), datetime(2018,1,1))
     print('got data')
     df = add_target(df)
     print('added targets')
     df = add_features(df)
     print('added features')
     x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
-    pipes = get_lr_grids()
+    pipes = get_variety_pipes()
     print('got pipes')
-    prediction_df = var_model_pipe_cross_val(x, y, df, pipes, n_splits=2)
-    calc_and_print_prediction_returns_pred(prediction_df)
-    calc_and_print_prediction_stats(prediction_df)
-    proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
-    for pred_col in proba_cols:
-        sp_ind = re.search('_\d_', pred_col).group(0)[1]
-        plot_prediction_roc(pred_col, prediction_df['y_test_{}'.format(sp_ind)], prediction_df[pred_col])
-    plt.show()
-    return_cols = [col for col in prediction_df.columns if col[-7:] == 'returns' or col[:3] == 'log']
-    for return_col in return_cols:
-        plot_prediction_returns(prediction_df[return_col])
-    plt.show()
-    proba_cols = [col for col in prediction_df.columns if col[-5:] == 'proba']
-    for return_col in proba_cols:
-        plot_pred_proba_hist(return_col, prediction_df[return_col])
-    plt.show()
-    plot_compare_scalers(df)
-    plt.show()
-    plot_dim_2(x, y)
-    plt.show()
-    plot_pca_elbow(x)
-    plt.show()
+    gran = 'eur_usd_m15'
+    prediction_dfs = {}
+    for pipe_name, pipe in pipes.items():
+        print(pipe)
+        prediction_df = specific_model_gran_pipe_cross_val(x, y, df, pipe_name, pipe, n_splits=2)
+        prediction_df = calc_and_print_prediction_returns_pred(prediction_df)
+        prediction_dfs[pipe_name] = prediction_df
+    return prediction_dfs
 
 def all_steps_for_grans_one_model_cross_val():
     table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
@@ -658,47 +670,124 @@ def for_gran_plot_pca():
     plt.show()
 
 
-def live_predict(grid_pickle='../picklehistory/grid_search_big_object_v1.pkl'):
+def live_predict_website():
     '''
     danger, warning, success based on proba distribution
     '''
     count=0
     while True:
+        start = time.time()
         table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
         start_time_stamps = ['2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2006-01-01T00:00:00.000000000Z', '2012-01-01T00:00:00.000000000Z', '2017-05-01T00:00:00.000000000Z']
-        grid_search_res = load_gridsearch(grid_pickle)
-        model = grid_search_res.best_estimator_
+        # grid_search_res = load_gridsearch(grid_pickle)
+        model = Pipeline([('scale',StandardScaler()), ('clf', LogisticRegression(penalty='l2', C=1))])
         results_df = pd.DataFrame([])
+        feature_importance_df = pd.DataFrame([])
         for i in range(len(table_names)):
-            data = return_data_table_gt_time(table_names[i], start_time_stamps[i])
+            table_name = table_names[i]
+            data = return_data_table_gt_time(table_name, start_time_stamps[i])
+            print('got data')
             df = clean_data(data)
             df = add_target(df)
             df = add_features(df)
+            print('added target and features')
             x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
             model.fit(x, y)
+            pickle.dump(model, open('../picklehistory/live_lr_'+table_name+'_model.pkl', 'wb'))
+            print('fit model')
+            feature_importance_df[table_name] = np.round(np.exp(model.steps[1][1].coef_[0]), 2)
             y_pred = model.predict(last_x_pred)
             y_pred_proba = model.predict_proba(last_x_pred)
             last_x_ohlcv.reset_index(inplace=True)
-            last_x_ohlcv['table_name'] = table_names[i]
+            last_x_ohlcv['table_name'] = table_name
             last_x_ohlcv['y_pred'] = y_pred
             last_x_ohlcv['y_pred'] = last_x_ohlcv['y_pred'].map({1:'Up', 0:'Down'})
-            last_x_ohlcv['y_pred_proba'] = y_pred_proba[:,1]
-            results_df = results_df.append(last_x_ohlcv)
+            last_x_ohlcv['y_pred_proba'] = np.round(y_pred_proba[:,1]*100, 2)
+            last_x_ohlcv['color'] = last_x_ohlcv['y_pred'].map({'Up':'success', 'Down':'danger'})
+            results_df = results_df.append(last_x_ohlcv, ignore_index=True)
+        feature_importance_df.index = x.columns
+        feature_importance_df.sort_values('eur_usd_m15', ascending=False, inplace=True)
+        feature_importance_df = feature_importance_df.iloc[:30]
+        feature_importance_df.reset_index(inplace=True)
         pickle.dump(results_df, open('../picklehistory/live_results_df.pkl', 'wb'))
+        pickle.dump(feature_importance_df, open('../picklehistory/feature_importance_df.pkl', 'wb'))
         count+=1
-        print('completed prediction: {}'.format(count))
-        time.sleep(1)
+        end = time.time()
+        print('completed prediction: {} in {:.2f} seconds'.format(count, end-start))
+
+def live_trade_one_gran(instru='EUR_USD', gran='M15'):
+    '''
+    continuously update table with new candles
+    '''
+    accountID = os.environ['oanda_demo_id']
+    access_token = os.environ['oanda_demo_api']
+    client = oandapyV20.API(access_token=access_token)
+    table_name = instru.lower()+'_'+gran.lower()
+    model = load_gridsearch('../picklehistory/live_lr_'+table_name+'_model.pkl')
+    '''
+    cross validates models and returns prediction results
+    '''
+    prediction_df = pd.DataFrame([])
+    while True:
+        last_timestamp = get_last_timestamp(table_name)
+        print('table_name {}: last timestamp: {}'.format(table_name, last_timestamp))
+        params = {'price': 'M', 'granularity': gran,
+                  'count': 5000,
+                  'from': last_timestamp,
+                  'includeFirst': False,
+                  'alignmentTimezone': 'America/New_York'}
+        r = instruments.InstrumentsCandles(instrument=instru,params=params)
+        client.request(r)
+        resp = r.response
+        for can in resp['candles']:
+            candle = []
+            if can['complete'] == True and time_in_table(table_name, can['time']) == False:
+                candle.append((can['time'], can['volume'], can['mid']['c'], can['mid']['h'], can['mid']['l'], can['mid']['o'], can['complete']))
+                data_to_table(table_name, candle)
+                print('table name: {} added: {}'.format(table_name, candle))
+                start = time.time()
+                last_month = int(candle[0][0][5:7])-1
+                last_month_timestamp = candle[0][0][:5]+str(last_month).zfill(2)+candle[0][0][7:]
+                data = return_data_table_gt_time('eur_usd_m15', last_month_timestamp)
+                df = clean_data(data)
+                df = add_target(df)
+                df = add_features(df)
+                x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
+                y_pred = model.predict(last_x_pred)
+                y_pred_proba = model.predict_proba(last_x_pred)
+                end = time.time()
+                print('last x time: {} prediction: {} proba: {} took: {:.2f} seconds'.format(last_x_ohlcv.index[0], y_pred[0], y_pred_proba[0][1], end-start))
+                last_x_ohlcv['y_pred'] = y_pred
+                last_x_ohlcv['y_pred_proba'] = y_pred_proba[:,1]
+                prediction_df = prediction_df.append(last_x_ohlcv)
+                prediction_df = add_target(prediction_df)
+                prediction_df['y_pred_returns'] = prediction_df['y_pred'].map({1:1, 0:-1}).shift(1) * prediction_df['log_returns']
+                print('{} {:.2f}%'.format('y_pred_returns', (np.exp(np.sum(prediction_df['y_pred_returns']))-1)*100))
+                prediction_df = prediction_df[['volume', 'open', 'high', 'low', 'close', 'y_pred', 'y_pred_proba', 'log_returns', 'y_pred_returns', 'target_label_direction_shifted']]
+                pickle.dump(prediction_df, open('../picklehistory/'+table_name+'_prediction_df.pkl', 'wb'))
+                return_cols = ['y_pred_returns', 'log_returns']
+                fig = plt.figure(figsize=(17,8))
+                for return_col in return_cols:
+                    pred_returns = prediction_df[return_col]
+                    cum_returns = pred_returns.cumsum().apply(np.exp)-1 #you can add log returns and then transpose back with np.exp
+                    cum_returns.fillna(0, inplace=True)
+                    plt.plot(cum_returns)
+                plt.legend(loc='best')
+                plt.savefig('../static/images/'+table_name+'_returns.png')
+
+
+
 
 if __name__ == '__main__':
     #for_gran_plot_pca()
 
     #dump_big_gridsearch()
 
-    prediction_dfs = all_steps_for_grans_one_model_cross_val()
-    for_mods_plot_roc_returns(prediction_dfs)
+    # prediction_dfs = all_steps_for_models_cross_val()
+    # for_mods_plot_roc_returns(prediction_dfs)
 
 
-    # df = get_data('EUR_USD_M1', datetime(2016,4,1), datetime(2016,6,1))
+    # df = get_data('EUR_USD_M15', datetime(2017,9,1), datetime(2018,6,1))
     # print('got data')
     # df = add_target(df)
     # print('added targets')
@@ -706,11 +795,11 @@ if __name__ == '__main__':
     # print(df.shape)
     # print('added features')
     # x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
-    # print(x.shape, y.shape)
+    # # print(x.shape, y.shape)
 
-
-    #live_predict()
-    #x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc = all_steps_simple_feature_importance()
+    live_trade_one_gran()
+    #live_predict_website()
+    # x, y, lr, model_lr = all_steps_simple_feature_importance()
 
 
     #prediction_df_nn, prediction_df_xg = all_steps_gran_cross_val()

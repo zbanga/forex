@@ -151,7 +151,7 @@ I used each technical indicator with inputs 5, 15, 25, 35, and 45.
 | Statistic Functions | LINEARREG_SLOPE | Linear Regression Slope | [timeperiod: 14] | [real] |
 | Statistic Functions | TSF | Time Series Forecast | [timeperiod: 14] | [real] |
 
-### Technical Indicators with more than 1 Parameter
+### Technical Indicators with More Than 1 Parameter
 
 | Group | Short Name | Name | Parameters | Output |
 |---------------------|------------|-------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------|
@@ -178,11 +178,11 @@ https://mrjbq7.github.io/ta-lib/funcs.html
 
 Future Opportunities: More technical indicators with varying parameters.
 
-# Exploratory Data Analysis
+# Feature Analysis
 
 I calculated feature importance of the technical indicators with a variety of methods using Chi Squared Test, ANOVA F-value test, Mutual Information test, Logistic Regression with Regularization, and Tree Based Gini Information Gain feature importance.
 
-### Chi Squared Calculation for Feature importances
+### Chi Squared Calculation for Feature Importances
 
 | Indicator | Chi Importance |
 |------------|----------------|

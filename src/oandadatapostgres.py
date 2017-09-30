@@ -98,7 +98,7 @@ def time_in_table(table_name, time_stamp):
     conn.close()
     return data[0][0]
 
-def get_data(instru, gran, last_timestamp = '2017-09-04T15:41:00.000000000Z'):
+def get_data(instru, gran, last_timestamp = '2000-01-01T00:00:00.000000000Z'):
     '''
     get initial data to databse from 2005 to today
     '2000-01-01T00:00:00.000000000Z'
@@ -132,40 +132,9 @@ def get_data(instru, gran, last_timestamp = '2017-09-04T15:41:00.000000000Z'):
         if last_month == '2017-09-26':
             hit_today = True
 
-def get_data_continuous(instru, gran):
-    '''
-    continuously update table with new candles
-    '''
-    accountID = os.environ['oanda_demo_id']
-    access_token = os.environ['oanda_demo_api']
-    client = oandapyV20.API(access_token=access_token)
-    columns=['time', 'volume', 'close', 'high', 'low', 'open', 'complete']
-    i=0
-    hit_today = False
-    table_name = instru.lower()+'_'+gran.lower()
-    while True:
-        last_timestamp = get_last_timestamp(table_name)
-        print('last time stamp in table: {}'.format(last_timestamp))
-        params = {'price': 'M', 'granularity': gran,
-                  'count': 5000,
-                  'from': last_timestamp,
-                  'includeFirst': False,
-                  'alignmentTimezone': 'America/New_York'}
-        r = instruments.InstrumentsCandles(instrument=instru,params=params)
-        client.request(r)
-        resp = r.response
-        i+=1
-        print('oanda status: {} loop: {}'.format(r.status_code, i))
-        data = []
-        for can in resp['candles']:
-            if can['complete'] == True and time_in_table(table_name, can['time']) == False:
-                data.append((can['time'], can['volume'], can['mid']['c'], can['mid']['h'], can['mid']['l'], can['mid']['o'], can['complete']))
-                data_to_table(table_name, data)
-                print('added to table: {}'.format(data))
-                data = []
-        time.sleep(10)
 
-def get_data_continuous_multiple_time_stamps():
+
+def get_data_continuous_multiple_grans():
     '''
     continuously update table with new candles
     '''
@@ -191,9 +160,9 @@ def get_data_continuous_multiple_time_stamps():
             for can in resp['candles']:
                 if can['complete'] == True and time_in_table(table_names[i], can['time']) == False:
                     data.append((can['time'], can['volume'], can['mid']['c'], can['mid']['h'], can['mid']['l'], can['mid']['o'], can['complete']))
-                    data_to_table(table_names[i], data)
-                    print('added to {}: {}'.format(table_names[i], data))
-                    data = []
+            data_to_table(table_names[i], data)
+            print('added to {}: {}'.format(table_names[i], data))
+            data = []
         time.sleep(1)
 
 def return_data_table(table_name):
@@ -255,16 +224,13 @@ if __name__ == '__main__':
 
     # data = return_data_table('eur_usd_d')
     # df = clean_data(data)
-    get_data_continuous_multiple_time_stamps()
 
+    #get_data_continuous_multiple_time_stamps()
     #
-    # granularities = ['S5', 'S10', 'S15', 'S30', 'M2', 'M4', 'M5', 'M10', 'M15', 'M30', 'H1', 'H2', 'H3','H4', 'H6', 'H8', 'H12', 'D']
-    # granularities = granularities[::-1]
-    # for gran in granularities:
-    # gran = 'M1'
-    # print(gran)
-    # # add_table('EUR_USD_'+gran)
-    # get_data(instru='EUR_USD', gran=gran)
+    gran = 'M15'
+    print(gran)
+    add_table('EUR_USD_'+gran)
+    get_data(instru='EUR_USD', gran=gran)
 
 
 

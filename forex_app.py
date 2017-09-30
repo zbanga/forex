@@ -19,15 +19,25 @@ https://www.tradingview.com/widget/
 
 app = Flask(__name__)
 
+@app.route('/liveprediction.html')
+def grid():
+    columns=['time', 'open', 'high', 'low', 'close', 'volume', 'table_name','y_pred', 'y_pred_proba']
+    live_pred = pickle.load(open('picklehistory/live_results_df.pkl', 'rb')).values
+    live_feat_imp = pickle.load(open('picklehistory/feature_importance_df.pkl', 'rb')).values
+    live_trade = pickle.load(open('picklehistory/eur_usd_m15_prediction_df.pkl', 'rb')).reset_index()
+    live_trade['y_pred'] = live_trade['y_pred'].shift(1)
+    live_trade['y_pred_proba'] = live_trade['y_pred_proba'].shift(1)
+    cum_returns = np.round((np.exp(np.sum(live_trade['y_pred_returns']))-1)*100,2)
+    live_trade = live_trade.values
+    return render_template('liveprediction.html', live_pred=live_pred, live_feat_imp=live_feat_imp, live_trade=live_trade, cum_returns=cum_returns)
+
 @app.route('/index.html')
 def index():
     return render_template('index.html')
 
 @app.route('/tables.html')
 def tables():
-    columns=['time', 'volume', 'close', 'high', 'low', 'open', 'complete']
-    data = return_data_table_gt_time('eur_usd_m1', '2017-09-26T00:00:00.000000000Z')
-    return render_template('tables.html', data=data)
+    return render_template('tables.html')
 
 @app.route('/flot.html')
 def flot():
@@ -60,13 +70,6 @@ def typography():
 @app.route('/icons.html')
 def icons():
     return render_template('icons.html')
-
-@app.route('/liveprediction.html')
-def grid():
-    columns=['time', 'open', 'high', 'low', 'close', 'volume', 'table_name','y_pred', 'y_pred_proba']
-    data = pick = pickle.load(open('picklehistory/live_results_df.pkl', 'rb'))
-    data = data.values
-    return render_template('liveprediction.html', data=data)
 
 @app.route('/blank.html')
 def blank():

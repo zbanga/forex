@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Live EUR_USD Predictions</title>
+    <title>Live EUR_USD Prediction</title>
 
 
     <!-- Bootstrap Core CSS -->
@@ -17,6 +17,12 @@
 
     <!-- MetisMenu CSS -->
     <link href="../static/vendor/metisMenu/metisMenu.min.css" rel="stylesheet">
+
+    <!-- DataTables CSS -->
+    <link href="../static/vendor/datatables-plugins/dataTables.bootstrap.css" rel="stylesheet">
+
+    <!-- DataTables Responsive CSS -->
+    <link href="../static/vendor/datatables-responsive/dataTables.responsive.css" rel="stylesheet">
 
     <!-- Custom CSS -->
     <link href="../static/dist/css/sb-admin-2.css" rel="stylesheet">
@@ -36,331 +42,58 @@
 <body>
 
     <div id="wrapper">
-
+        <a class="navbar-brand" href="liveprediction.html">EUR_USD Prediction</a>
         <!-- Navigation -->
-        <nav class="navbar navbar-default navbar-static-top" role="navigation" style="margin-bottom: 0">
-            <div class="navbar-header">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                    <span class="sr-only">Toggle navigation</span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                    <span class="icon-bar"></span>
-                </button>
-                <a class="navbar-brand" href="index.html">EUR_USD Prediction</a>
-            </div>
-            <!-- /.navbar-header -->
-
-            <ul class="nav navbar-top-links navbar-right">
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        <i class="fa fa-envelope fa-fw"></i> <i class="fa fa-caret-down"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-messages">
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <strong>John Smith</strong>
-                                    <span class="pull-right text-muted">
-                                        <em>Yesterday</em>
-                                    </span>
-                                </div>
-                                <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eleifend...</div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <strong>John Smith</strong>
-                                    <span class="pull-right text-muted">
-                                        <em>Yesterday</em>
-                                    </span>
-                                </div>
-                                <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eleifend...</div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <strong>John Smith</strong>
-                                    <span class="pull-right text-muted">
-                                        <em>Yesterday</em>
-                                    </span>
-                                </div>
-                                <div>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque eleifend...</div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a class="text-center" href="#">
-                                <strong>Read All Messages</strong>
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-                        </li>
-                    </ul>
-                    <!-- /.dropdown-messages -->
-                </li>
-                <!-- /.dropdown -->
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        <i class="fa fa-tasks fa-fw"></i> <i class="fa fa-caret-down"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-tasks">
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <p>
-                                        <strong>Task 1</strong>
-                                        <span class="pull-right text-muted">40% Complete</span>
-                                    </p>
-                                    <div class="progress progress-striped active">
-                                        <div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 40%">
-                                            <span class="sr-only">40% Complete (success)</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <p>
-                                        <strong>Task 2</strong>
-                                        <span class="pull-right text-muted">20% Complete</span>
-                                    </p>
-                                    <div class="progress progress-striped active">
-                                        <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100" style="width: 20%">
-                                            <span class="sr-only">20% Complete</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <p>
-                                        <strong>Task 3</strong>
-                                        <span class="pull-right text-muted">60% Complete</span>
-                                    </p>
-                                    <div class="progress progress-striped active">
-                                        <div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 60%">
-                                            <span class="sr-only">60% Complete (warning)</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <p>
-                                        <strong>Task 4</strong>
-                                        <span class="pull-right text-muted">80% Complete</span>
-                                    </p>
-                                    <div class="progress progress-striped active">
-                                        <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100" style="width: 80%">
-                                            <span class="sr-only">80% Complete (danger)</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a class="text-center" href="#">
-                                <strong>See All Tasks</strong>
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-                        </li>
-                    </ul>
-                    <!-- /.dropdown-tasks -->
-                </li>
-                <!-- /.dropdown -->
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        <i class="fa fa-bell fa-fw"></i> <i class="fa fa-caret-down"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-alerts">
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <i class="fa fa-comment fa-fw"></i> New Comment
-                                    <span class="pull-right text-muted small">4 minutes ago</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <i class="fa fa-twitter fa-fw"></i> 3 New Followers
-                                    <span class="pull-right text-muted small">12 minutes ago</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <i class="fa fa-envelope fa-fw"></i> Message Sent
-                                    <span class="pull-right text-muted small">4 minutes ago</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <i class="fa fa-tasks fa-fw"></i> New Task
-                                    <span class="pull-right text-muted small">4 minutes ago</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#">
-                                <div>
-                                    <i class="fa fa-upload fa-fw"></i> Server Rebooted
-                                    <span class="pull-right text-muted small">4 minutes ago</span>
-                                </div>
-                            </a>
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <a class="text-center" href="#">
-                                <strong>See All Alerts</strong>
-                                <i class="fa fa-angle-right"></i>
-                            </a>
-                        </li>
-                    </ul>
-                    <!-- /.dropdown-alerts -->
-                </li>
-                <!-- /.dropdown -->
-                <li class="dropdown">
-                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                        <i class="fa fa-user fa-fw"></i> <i class="fa fa-caret-down"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-user">
-                        <li><a href="#"><i class="fa fa-user fa-fw"></i> User Profile</a>
-                        </li>
-                        <li><a href="#"><i class="fa fa-gear fa-fw"></i> Settings</a>
-                        </li>
-                        <li class="divider"></li>
-                        <li><a href="login.html"><i class="fa fa-sign-out fa-fw"></i> Logout</a>
-                        </li>
-                    </ul>
-                    <!-- /.dropdown-user -->
-                </li>
-                <!-- /.dropdown -->
-            </ul>
-            <!-- /.navbar-top-links -->
+        <nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="margin-bottom: 0">
+            <!-- TradingView Widget BEGIN -->
+            <span id="tradingview-copyright"><a ref="nofollow noopener" target="_blank" href="http://www.tradingview.com" style="color: rgb(173, 174, 176); font-family: &quot;Trebuchet MS&quot;, Tahoma, Arial, sans-serif; font-size: 13px;">Quotes by <span style="color: #3BB3E4">TradingView</span></a></span>
+            <script src="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js">{
+              "symbols": [
+                {
+                  "description": "",
+                  "proName": "OANDA:EURUSD"
+                },
+                {
+                  "description": "",
+                  "proName": "OANDA:USDJPY"
+                },
+                {
+                  "description": "",
+                  "proName": "OANDA:GBPUSD"
+                },
+                {
+                  "description": "",
+                  "proName": "OANDA:USDCAD"
+                },
+                {
+                  "description": "",
+                  "proName": "OANDA:USDCHF"
+                }
+              ],
+              "locale": "en"
+            }</script>
+            <!-- TradingView Widget END -->
 
             <div class="navbar-default sidebar" role="navigation">
                 <div class="sidebar-nav navbar-collapse">
                     <ul class="nav" id="side-menu">
-                        <li class="sidebar-search">
-                            <div class="input-group custom-search-form">
-                                <input type="text" class="form-control" placeholder="Search...">
-                                <span class="input-group-btn">
-                                <button class="btn btn-default" type="button">
-                                    <i class="fa fa-search"></i>
-                                </button>
-                            </span>
-                            </div>
-                            <!-- /input-group -->
+                        <li>
+                            <a href="liveprediction.html"><i class="fa fa-dashboard fa-fw"></i>Live EUR_USD Prediction</a>
                         </li>
                         <li>
-                            <a href="index.html"><i class="fa fa-dashboard fa-fw"></i> Dashboard</a>
+                            <a href="liveprediction.html"><i class="fa fa-dashboard fa-fw"></i>Live EUR_USD Prediction</a>
                         </li>
-                        <li>
-                            <a href="#"><i class="fa fa-bar-chart-o fa-fw"></i> Charts<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li>
-                                    <a href="flot.html">Flot Charts</a>
-                                </li>
-                                <li>
-                                    <a href="morris.html">Morris.js Charts</a>
-                                </li>
-                            </ul>
-                            <!-- /.nav-second-level -->
-                        </li>
-                        <li>
-                            <a href="tables.html"><i class="fa fa-table fa-fw"></i> Tables</a>
-                        </li>
-                        <li>
-                            <a href="forms.html"><i class="fa fa-edit fa-fw"></i> Forms</a>
-                        </li>
-                        <li>
-                            <a href="liveprediction.html">Live Prediction</a>
-                        </li>
-                        <li>
-                            <a href="#"><i class="fa fa-wrench fa-fw"></i> UI Elements<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li>
-                                    <a href="panels-wells.html">Panels and Wells</a>
-                                </li>
-                                <li>
-                                    <a href="buttons.html">Buttons</a>
-                                </li>
-                                <li>
-                                    <a href="notifications.html">Notifications</a>
-                                </li>
-                                <li>
-                                    <a href="typography.html">Typography</a>
-                                </li>
-                                <li>
-                                    <a href="icons.html"> Icons</a>
-                                </li
-                            </ul>
-                            <!-- /.nav-second-level -->
-                        </li>
-                        <li>
-                            <a href="#"><i class="fa fa-sitemap fa-fw"></i> Multi-Level Dropdown<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li>
-                                    <a href="#">Second Level Item</a>
-                                </li>
-                                <li>
-                                    <a href="#">Second Level Item</a>
-                                </li>
-                                <li>
-                                    <a href="#">Third Level <span class="fa arrow"></span></a>
-                                    <ul class="nav nav-third-level">
-                                        <li>
-                                            <a href="#">Third Level Item</a>
-                                        </li>
-                                        <li>
-                                            <a href="#">Third Level Item</a>
-                                        </li>
-                                        <li>
-                                            <a href="#">Third Level Item</a>
-                                        </li>
-                                        <li>
-                                            <a href="#">Third Level Item</a>
-                                        </li>
-                                    </ul>
-                                    <!-- /.nav-third-level -->
-                                </li>
-                            </ul>
-                            <!-- /.nav-second-level -->
-                        </li>
-                        <li>
-                            <a href="#"><i class="fa fa-files-o fa-fw"></i> Sample Pages<span class="fa arrow"></span></a>
-                            <ul class="nav nav-second-level">
-                                <li>
-                                    <a href="blank.html">Blank Page</a>
-                                </li>
-                                <li>
-                                    <a href="login.html">Login Page</a>
-                                </li>
-                            </ul>
-                            <!-- /.nav-second-level -->
-                        </li>
+                        <!-- TradingView Widget BEGIN -->
+                        <span id="tradingview-copyright"><a ref="nofollow noopener" target="_blank" href="http://www.tradingview.com" style="color: rgb(173, 174, 176); font-family: &quot;Trebuchet MS&quot;, Tahoma, Arial, sans-serif; font-size: 13px;">Economic Calendar by <span style="color: #3BB3E4">TradingView</span></a></span>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js">
+                        {
+                          "width": "250",
+                          "height": "5000",
+                          "importanceFilter": "-1,0,1",
+                          "currencyFilter": "USD,EUR"
+                        }
+                        </script>
+                        <!-- TradingView Widget END -->
                     </ul>
                 </div>
                 <!-- /.sidebar-collapse -->
@@ -371,42 +104,36 @@
         <div id="page-wrapper">
             <div class="row">
                 <div class="col-lg-12">
-                    <h1 class="page-header">Live EUR_USD Neural Network and XG Boost Prediction</h1>
+                    <h1 class="page-header">Live EUR_USD Prediction</h1>
                 </div>
                 <!-- /.col-lg-12 -->
             </div>
             <div class="row">
-                <div class="col-lg-12" style="height:600px">
+                <div class="col-lg-12" style="height:900px">
                     <!-- /.row -->
                     <!-- TradingView Widget BEGIN -->
                     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
                     <script type="text/javascript">
                     new TradingView.widget({
                       "autosize": true,
-                      "symbol": "FX_IDC:EURUSD",
-                      "interval": "1",
+                      "symbol": "OANDA:EURUSD",
+                      "interval": "15",
                       "timezone": "Etc/UTC",
                       "theme": "Light",
+                      "hide_top_toolbar": true,
                       "style": "1",
                       "locale": "en",
                       "toolbar_bg": "#f1f3f6",
-                      "enable_publishing": true,
-                      "withdateranges": true,
-                      "hide_side_toolbar": false,
-                      "allow_symbol_change": true,
-                      "details": true,
-                      "hotlist": true,
-                      "calendar": true,
-                      "news": [
-                        "stocktwits",
-                        "headlines"
-                      ],
+                      "enable_publishing": false,
+                      "save_image": false,
+                      "hideideas": true,
                       "studies": [
-                        "RSI@tv-basicstudies"
-                      ],
-                      "show_popup_button": true,
-                      "popup_width": "1000",
-                      "popup_height": "650"
+                        "BB@tv-basicstudies",
+                        "RSI@tv-basicstudies",
+                        "MACD@tv-basicstudies",
+                        "LinearRegression@tv-basicstudies",
+                        "Stochastic@tv-basicstudies"
+                      ]
                     });
                     </script>
                     <!-- TradingView Widget END -->
@@ -420,8 +147,7 @@
                 <div class="col-lg-12">
                     <div class="panel panel-default">
                         <div class="panel-body">
-                            <h3>Live EUR_USD Candle Prediction</h3>
-                            <p>.</p>
+                            <h3>Live EUR_USD Prediction</h3>
                             <div class="table-responsive">
                                 <table class="table table-bordered table-striped">
                                     <thead>
@@ -457,16 +183,16 @@
                                     </thead>
                                     <tbody>
                                         <!-- ['time', 'open', 'high', 'low', 'close', 'volume', 'table_name','y_pred', 'y_pred_proba'] -->
-                                        {% for time, open, high, low, close, volume, table_name, y_pred, y_pred_proba in data %}
+                                        {% for time, open, high, low, close, volume, table_name, y_pred, y_pred_proba, color in live_pred %}
                                         <tr>
                                             <th>{{ table_name }}</th>
                                                 <td>{{ time }}</td>
-                                                <td class="danger">{{ open }}</td>
+                                                <td>{{ open }}</td>
                                                 <td>{{ high }}</td>
                                                 <td>{{ low }}</td>
-                                                <td class="warning">{{ close }}</td>
+                                                <td>{{ close }}</td>
                                                 <td>{{ volume }}</td>
-                                                <td class="success">{{ y_pred }}</td>
+                                                <td class={{ color }}>{{ y_pred }}</td>
                                                 <td>{{ y_pred_proba }}</td>
                                         </tr>
                                         {% endfor %}
@@ -474,16 +200,174 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <p>This advice will make you filthy rich
-                                <code>.col-md-</code> class to an element will not only affect its styling on medium devices but also on large devices if a
-                                <code>.col-lg-</code> class is not present.</p>
+                            <p>WARNING: This advice will make you filthy rich.</p>
                         </div>
                     </div>
                 </div>
                 <!-- /.col-lg-12 -->
             </div>
             <!-- /.row -->
-
+            <div class="row">
+                <div class="col-lg-12" style="height:20px">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <h3>Live EUR_USD Feature Importance</h3>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>
+                                                indicator
+                                            </th>
+                                            <th>
+                                                eur_usd_d
+                                            </th>
+                                            <th>
+                                                eur_usd_h12
+                                            </th>
+                                            <th>
+                                                eur_usd_h6
+                                            </th>
+                                            <th>
+                                                eur_usd_h1
+                                            </th>
+                                            <th>
+                                                eur_usd_m30
+                                            </th>
+                                            <th>
+                                                eur_usd_m15
+                                            </th>
+                                            <th>
+                                                eur_usd_m1
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1'] -->
+                                        {% for a, b, c, d, e, f, g, h in live_feat_imp %}
+                                        <tr>
+                                            <th>{{ a }}</th>
+                                                <td>{{ b }}</td>
+                                                <td>{{ c }}</td>
+                                                <td>{{ d }}</td>
+                                                <td>{{ e }}</td>
+                                                <td>{{ f }}</td>
+                                                <td>{{ g }}</td>
+                                                <td>{{ h }}</td>
+                                        {% endfor %}
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p>WARNING: This advice will make you filthy rich.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <!-- /.row -->
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="panel panel-default" style="height:800px">
+                        <h2>Live Trading EUR USD M15</h2>
+                        <img src="static/images/eur_usd_m15_returns.png" alt="Returns", width="1700", height="800">
+                    </div>
+                <!-- /.col-lg-12 -->
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading">
+                            Trading Log, Returns: {{ cum_returns }}%
+                        </div>
+                        <!-- /.panel-heading -->
+                        <!-- ['volume', 'open', 'high', 'low', 'close', 'y_pred', 'y_pred_proba', 'log_returns', 'y_pred_returns', 'target_label_direction_shifted'] -->
+                        <div class="panel-body">
+                            <table width="100%" class="table table-striped table-bordered table-hover" id="dataTables-example">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Volume</th>
+                                        <th>Open</th>
+                                        <th>High</th>
+                                        <th>Low</th>
+                                        <th>Close</th>
+                                        <th>Pred</th>
+                                        <th>Proba</th>
+                                        <th>Log Returns</th>
+                                        <th>Pred Returns</th>
+                                        <th>Target Shifted</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                  {% for a, b, c, d, e, f, g, h, i, j, k in live_trade %}
+                                    <tr>
+                                      <td>{{ a }}</td>
+                                      <td>{{ b }}</td>
+                                      <td>{{ c }}</td>
+                                      <td>{{ d }}</td>
+                                      <td>{{ e }}</td>
+                                      <td>{{ f }}</td>
+                                      <td>{{ g }}</td>
+                                      <td>{{ h }}</td>
+                                      <td>{{ i }}</td>
+                                      <td>{{ j }}</td>
+                                      <td>{{ k }}</td>
+                                    </tr>
+                                  {% endfor %}
+                                </tbody>
+                            </table>
+                            <!-- /.table-responsive -->
+                            <div class="well">
+                                <h4>DataTables Usage Information</h4>
+                                <p>DataTables is a very flexible, advanced tables plugin for jQuery. In SB Admin, we are using a specialized version of DataTables built for Bootstrap 3. We have also customized the table headings to use Font Awesome icons in place of images. For complete documentation on DataTables, visit their website at <a target="_blank" href="https://datatables.net/">https://datatables.net/</a>.</p>
+                                <a class="btn btn-default btn-lg btn-block" target="_blank" href="https://datatables.net/">View DataTables Documentation</a>
+                            </div>
+                        </div>
+                        <!-- /.panel-body -->
+                    </div>
+                    <!-- /.panel -->
+                </div>
+                <!-- /.col-lg-12 -->
+            </div>
+            <div class="row">
+                <div class="col-lg-12" style="height:500px">
+                    <!-- TradingView Widget BEGIN -->
+                    <span id="tradingview-copyright"><a ref="nofollow noopener" target="_blank" href="http://www.tradingview.com" style="color: rgb(173, 174, 176); font-family: &quot;Trebuchet MS&quot;, Tahoma, Arial, sans-serif; font-size: 13px;">Forex Heat Map by <span style="color: #3BB3E4">TradingView</span></a></span>
+                    <script src="https://s3.tradingview.com/external-embedding/embed-widget-forex-heat-map.js">{
+                      "currencies": [
+                        "EUR",
+                        "USD",
+                        "JPY",
+                        "GBP",
+                        "CHF",
+                        "AUD",
+                        "CAD",
+                        "NZD",
+                        "CNY",
+                        "TRY",
+                        "SEK",
+                        "NOK",
+                        "DKK",
+                        "ZAR",
+                        "HKD"
+                      ],
+                      "width": "100%",
+                      "height": "100%",
+                      "locale": "en"
+                    }</script>
+                    <!-- TradingView Widget END -->
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12" style="height:20px">
+                </div>
+            </div>
             <div class="row">
                 <div class="col-lg-12">
                     <div class="panel panel-default">
@@ -697,8 +581,22 @@
     <!-- Metis Menu Plugin JavaScript -->
     <script src="../static/vendor/metisMenu/metisMenu.min.js"></script>
 
+    <!-- DataTables JavaScript -->
+    <script src="../static/vendor/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="../static/vendor/datatables-plugins/dataTables.bootstrap.min.js"></script>
+    <script src="../static/vendor/datatables-responsive/dataTables.responsive.js"></script>
+
     <!-- Custom Theme JavaScript -->
-    <script src="../static/dist/js/sb-admin-2.js"></script>
+    <script src="../dist/js/sb-admin-2.js"></script>
+
+    <!-- Page-Level Demo Scripts - Tables - Use for reference -->
+    <script>
+    $(document).ready(function() {
+        $('#dataTables-example').DataTable({
+            responsive: true
+        });
+    });
+    </script>
 
 </body>
 
