@@ -22,8 +22,14 @@ import sys
 import glob
 import psycopg2 as pg2
 from sqlalchemy import create_engine
+import configparser
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 16})
+
+config = configparser.ConfigParser()
+config.read('../config/config_v20.ini')
+accountID = config['oanda']['account_id']
+access_token = config['oanda']['api_key']
 
 
 def time_in_table(table_name, time_stamp):
@@ -110,8 +116,6 @@ def data_to_table(table_name, data):
     conn.close()
 
 def current_long_short_units():
-    accountID = os.environ['oanda_demo_id']
-    access_token = os.environ['oanda_demo_api']
     client = oandapyV20.API(access_token=access_token)
     r = positions.PositionDetails(accountID=accountID, instrument='EUR_USD')
     client.request(r)
@@ -260,8 +264,6 @@ def fit_models():
         pickle.dump(model, open('../picklehistory/live_lr_eur_usd_m15_model.pkl', 'wb'))
 
 def trade():
-    accountID = os.environ['oanda_demo_id']
-    access_token = os.environ['oanda_demo_api']
     client = oandapyV20.API(access_token=access_token)
     table_name = 'eur_usd_m15'
     count = 0
