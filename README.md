@@ -184,48 +184,108 @@ I calculated feature importance of the technical indicators with a variety of me
 
 ### Chi Squared Calculation for Feature Importances
 
-| Indicator | Chi Importance |
-|------------|----------------|
-| STOCHRSI_1 | 8.14 |
-| WILLR_5 | 7.56 |
-| STOCHF_1 | 7.56 |
-| WILLR_15 | 7.22 |
-| WILLR_25 | 6.27 |
-| WILLR_35 | 5.52 |
-| SAREXT | 4.21 |
-| BOP | 3.97 |
-| WILLR_45 | 3.93 |
-| CMO_5 | 3.59 |
+| Indicator | Chi 2 Feature Importance |
+|--------------------|--------------------------|
+| STOCHRSI_FASTK | 187.418567 |
+| WILLR_5_REAL | 149.494590 |
+| STOCHF_FASTK | 149.494590 |
+| WILLR_15_REAL | 118.146973 |
+| BOP_REAL | 97.073508 |
+| WILLR_25_REAL | 94.308444 |
+| CCI_5_REAL | 87.559761 |
+| SAREXT_REAL | 80.269241 |
+| WILLR_35_REAL | 78.232391 |
+| AROON_5_AROONUP | 75.784805 |
+| WILLR_45_REAL | 68.047940 |
+| STOCHRSI_FASTD | 65.356457 |
+| AROONOSC_5_REAL | 64.849298 |
+| RSI_5_REAL | 63.942682 |
+| CMO_5_REAL | 63.942682 |
+| AROON_5_AROONDOWN | 60.208233 |
+| STOCHF_FASTD | 52.228574 |
+| STOCH_SLOWK | 52.228574 |
+| MFI_5_REAL | 43.643316 |
+| AROON_15_AROONUP | 36.278569 |
+| PLUS_DI_5_REAL | 35.991333 |
+| AROONOSC_15_REAL | 30.384222 |
+| MINUS_DI_5_REAL | 28.155336 |
+| AROON_15_AROONDOWN | 27.817957 |
+| AROON_25_AROONUP | 27.463824 |
+| STOCH_SLOWD | 25.369297 |
+| AROONOSC_25_REAL | 21.301853 |
+| RSI_15_REAL | 18.953485 |
+| CMO_15_REAL | 18.953485 |
+| AROON_35_AROONUP | 18.861512 |
 
 ### ANOVA F-value Calculation for Feature Importance
 
-| Indicator | ANOVA Importance |
-|-----------|------------------|
-| RSI_5 | 46.6 |
-| CMO_5 | 46.6 |
-| WILLR_15 | 45.52 |
-| STOCHF_1 | 44.85 |
-| WILLR_5 | 44.85 |
-| WILLR_25 | 38.64 |
-| WILLR_35 | 33.69 |
-| RSI_15 | 29.07 |
-| CMO_15 | 29.07 |
-| BOP | 27.02 |
+| Indicator | ANOVA Feature Importance |
+|-----------------|--------------------------|
+| STOCHF_FASTK | 907.387974 |
+| WILLR_5_REAL | 907.387974 |
+| RSI_5_REAL | 892.273184 |
+| CMO_5_REAL | 892.273184 |
+| WILLR_15_REAL | 742.706199 |
+| BOP_REAL | 684.049823 |
+| WILLR_25_REAL | 587.246205 |
+| ULTOSC_REAL | 560.140155 |
+| CCI_5_REAL | 556.521236 |
+| STOCHRSI_FASTK | 553.365985 |
+| CMO_15_REAL | 531.577331 |
+| RSI_15_REAL | 531.577331 |
+| CCI_15_REAL | 521.843503 |
+| PLUS_DI_5_REAL | 494.773138 |
+| WILLR_35_REAL | 481.797253 |
+| STOCH_SLOWK | 472.382646 |
+| STOCHF_FASTD | 472.382646 |
+| WILLR_45_REAL | 414.600246 |
+| MINUS_DI_5_REAL | 402.280988 |
+| CCI_25_REAL | 401.438393 |
+| CMO_25_REAL | 380.701244 |
+| RSI_25_REAL | 380.701244 |
+| MOM_5_REAL | 340.955823 |
+| CCI_35_REAL | 328.555654 |
+| ROC_5_REAL | 326.194949 |
+| ROCP_5_REAL | 326.194949 |
+| ROCR_5_REAL | 326.194949 |
+| ROCR100_5_REAL | 326.194949 |
+| MFI_5_REAL | 323.982085 |
+| STOCHRSI_FASTD | 319.723070 |
 
 ### Mutual Information Calculation for Feature Importance
 
-| Indicator | Mutual Info Importance |
-|------------------------|------------------------|
-| LINEARREG_ANGLE_15 | 0.024 |
-| LINEARREG_SLOPE_15 | 0.024 |
-| CCI_35 | 0.021 |
-| CMO_45 | 0.019 |
-| WILLR_25 | 0.019 |
-| RSI_45 | 0.019 |
-| TEMA_35 | 0.018 |
-| WILLR_5 | 0.016 |
-| LINEARREG_INTERCEPT_15 | 0.016 |
-| ADOSC | 0.015 |
+| Indicator | Mutual Info Feature Importance |
+|------------------------|--------------------------------|
+| STOCHF_FASTK | 0.006356 |
+| STOCHRSI_FASTK | 0.005146 |
+| RSI_5_REAL | 0.005116 |
+| CMO_5_REAL | 0.005096 |
+| AROON_15_AROONUP | 0.004554 |
+| HT_TRENDMODE_INTEGER | 0.004179 |
+| CORREL_5_REAL | 0.004031 |
+| ROCR100_15_REAL | 0.004027 |
+| ROC_15_REAL | 0.003884 |
+| PLUS_DI_35_REAL | 0.003870 |
+| ROCR_15_REAL | 0.003867 |
+| MINUS_DI_15_REAL | 0.003775 |
+| CCI_35_REAL | 0.003768 |
+| WILLR_15_REAL | 0.003745 |
+| ROCP_15_REAL | 0.003722 |
+| LINEARREG_SLOPE_5_REAL | 0.003672 |
+| RSI_15_REAL | 0.003459 |
+| CMO_15_REAL | 0.003421 |
+| BOP_REAL | 0.003329 |
+| WILLR_5_REAL | 0.003328 |
+| MINUS_DM_15_REAL | 0.003286 |
+| ULTOSC_REAL | 0.003267 |
+| WILLR_25_REAL | 0.003259 |
+| PLUS_DI_5_REAL | 0.003096 |
+| MACD_MACD | 0.003094 |
+| AROON_45_AROONUP | 0.002972 |
+| CORREL_25_REAL | 0.002475 |
+| MINUS_DI_5_REAL | 0.002436 |
+| ADX_15_REAL | 0.002397 |
+| TRIX_5_REAL | 0.002391 |
 
 
 ### Explained Variance of Features
@@ -240,11 +300,15 @@ Future Opportunities: Try other dimensionality reduction algorithms (t-sne) and 
 
 # Modeling
 
-I created data transformation and modeling pipelines that were used to gridsearch cross validated the models and preventing data leakage. The data transformation steps included scaling, selecting the best features, and dimensionality reduction. Logistic regression, neural networks, and boosted trees were used for the models. Each step in the pipeline has a variety of parameters that can be tuned. I used a powerful Amazon Web Service EC2 server to do the gridsearch parameter optimization in parallel. Both ROC_AUC and a custom % Return scoring functions were used for gridsearching.
+I created data transformation and modeling pipelines that were used to gridsearch cross validated the models and preventing data leakage. The data transformation steps included scaling, selecting the best features, and dimensionality reduction. Logistic regression, neural networks, and boosted trees were used for the models. Each step in the pipeline has a variety of parameters that can be tuned. I used a powerful Amazon Web Service EC2 server to do the gridsearch parameter optimization in parallel. Both ROC_AUC and a Custom % Return scoring function was used for gridsearching.
 
 Future Opportunities: Optimize the gridsearch scoring function to incorporate other financial metrics including alpha, beta, max drawdown, etc.
 
 # Results
+
+Scaling the Features, No PCA, No Feature Selection, and Logistic Regression with Regularization for Feature Selection (L1 and L2 were very similar) on the 15 minute candles produced the best results. The MLP network that provided very similar results had 1 layer and a Logistic activation function. It was pretty much just a Logistic Regression algorithm with a fancier name.
+
+### 15 Minute Candles
 
 ![alttext](/imgs/BADROC.png "Bad ROC")
 
@@ -271,6 +335,7 @@ Future Opportunities: Stack classification and regression models. Tune a trading
 
 Continuously update SQL database with live candles.
 Continuously fit gridsearched models and predict the future direction for each candle granularity and save predictions.
+Display the best features for predicting each candle.
 Display results in table with fancy tradingview widgets below.
 
 LINK TO WEBSITE HERE

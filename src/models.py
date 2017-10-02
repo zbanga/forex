@@ -25,20 +25,19 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from keras.utils.np_utils import to_categorical
-from keras.utils import np_utils
-from keras.models import Sequential
-from keras.layers.core import Dense
-from keras.optimizers import SGD
-from keras.wrappers.scikit_learn import KerasClassifier
-import theano
+# from keras.utils.np_utils import to_categorical
+# from keras.utils import np_utils
+# from keras.models import Sequential
+# from keras.layers.core import Dense
+# from keras.optimizers import SGD
+# from keras.wrappers.scikit_learn import KerasClassifier
+# import theano
 import xgboost as xgb
 from xgboost import XGBClassifier
 import gc
 import operator
 import time
 import pickle
-import matplotlib.pyplot as plt
 import oandapyV20
 import oandapyV20.endpoints.instruments as instruments
 import os
@@ -55,6 +54,7 @@ todo
 
 live trade with api
 clean up and refactor all code
+
 
 what is the state of the art?
 what are the technical indicators?
@@ -149,7 +149,7 @@ def add_features(df):
         for timeperiod in range(5, 55, 10):
             res = getattr(talib.abstract, fun)(ohlcv, timeperiod=timeperiod)
             if len(output) == 1:
-                df[fun+'_'+output[0].upper()] = res
+                df[fun+'_'+str(timeperiod)+'_'+output[0].upper()] = res
             else:
                 for i, val in enumerate(res):
                     df[fun+'_'+str(timeperiod)+'_'+output[i].upper()] = val
@@ -241,31 +241,31 @@ def calc_feature_importance_lr(x, y):
     print(x_new.shape)
     return x, y, lr, model_lr
 
-def get_nn(num_inputs=30):
-    '''
-    build keras/tensorflow nn
-    '''
-    model = Sequential()
-    num_neurons_in_layer = 50
-    num_classes = 2
-    model.add(Dense(input_dim=num_inputs,
-                     units=num_neurons_in_layer,
-                     kernel_initializer='uniform',
-                     activation='tanh'))
-    model.add(Dense(input_dim=num_neurons_in_layer,
-                     units=num_neurons_in_layer,
-                     kernel_initializer='uniform',
-                     activation='tanh'))
-    model.add(Dense(input_dim=num_neurons_in_layer,
-                     units=num_neurons_in_layer,
-                     kernel_initializer='uniform',
-                     activation='tanh'))
-    model.add(Dense(input_dim=num_neurons_in_layer,
-                     units=num_classes,
-                     kernel_initializer='uniform',
-                     activation='softmax'))
-    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=["accuracy"])
-    return model
+# def get_nn(num_inputs=30):
+#     '''
+#     build keras/tensorflow nn
+#     '''
+#     model = Sequential()
+#     num_neurons_in_layer = 50
+#     num_classes = 2
+#     model.add(Dense(input_dim=num_inputs,
+#                      units=num_neurons_in_layer,
+#                      kernel_initializer='uniform',
+#                      activation='tanh'))
+#     model.add(Dense(input_dim=num_neurons_in_layer,
+#                      units=num_neurons_in_layer,
+#                      kernel_initializer='uniform',
+#                      activation='tanh'))
+#     model.add(Dense(input_dim=num_neurons_in_layer,
+#                      units=num_neurons_in_layer,
+#                      kernel_initializer='uniform',
+#                      activation='tanh'))
+#     model.add(Dense(input_dim=num_neurons_in_layer,
+#                      units=num_classes,
+#                      kernel_initializer='uniform',
+#                      activation='softmax'))
+#     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=["accuracy"])
+#     return model
 
 def get_variety_pipes():
     '''
@@ -299,13 +299,16 @@ def get_variety_pipes():
     lr_l2_c1 = Pipeline([('scale',StandardScaler()), ('clf', LogisticRegression(penalty='l2', C=1))])
     # pca_lr_l1 = Pipeline([('pca', PCA(.99)), ('clf', LogisticRegression(penalty='l1', C=1))])
     # pca_lr_l2 = Pipeline([('pca', PCA(.99)), ('clf', LogisticRegression(penalty='l2', C=1))])
-    # lr_l2_c1 = Pipeline([('clf', LogisticRegression(penalty='l2', C=1))])
+    lr_l2_c10 = Pipeline([('clf', LogisticRegression(penalty='l2', C=10))])
+    lr_l2_c01 = Pipeline([('clf', LogisticRegression(penalty='l2', C=.01))])
     # lr_mm_scale = Pipeline([('scale',MinMaxScaler()), ('clf', LogisticRegression(penalty='l2', C=1))])
     # lr_ss_scale = Pipeline([('scale',StandardScaler()), ('clf', LogisticRegression())])
     # lr_ss_scale = Pipeline([('scale',StandardScaler()), ('pca', PCA(.99)), ('clf', gb)])
     # classifiers = [lr, gb, ml]
     pipes = {
     'lr_l2_c1': lr_l2_c1,
+    'lr_l2_c10': lr_l2_c10,
+    'lr_l2_c01': lr_l2_c01
     }
     # for clf in classifiers:
     #     pipes[clf.__class__.__name__] = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('clf', clf)])
@@ -605,8 +608,8 @@ def all_steps_simple_feature_importance():
     df = add_features(df)
     print('added features')
     x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
-    x, y, lr, model_lr = calc_feature_importance_lr(x, y)
-    return  x, y, lr, model_lr
+    x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc = calc_feature_importance(x, y)
+    return  x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc
 
 def all_steps_for_models_cross_val():
     df = get_data('EUR_USD_M15', datetime(2007,1,1), datetime(2018,1,1))
@@ -678,7 +681,7 @@ def live_predict_website():
     while True:
         start = time.time()
         table_names = ['eur_usd_d', 'eur_usd_h12', 'eur_usd_h6', 'eur_usd_h1', 'eur_usd_m30', 'eur_usd_m15', 'eur_usd_m1']
-        start_time_stamps = ['2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2006-01-01T00:00:00.000000000Z', '2012-01-01T00:00:00.000000000Z', '2017-05-01T00:00:00.000000000Z']
+        start_time_stamps = ['2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2000-01-01T00:00:00.000000000Z', '2006-01-01T00:00:00.000000000Z', '2007-01-01T00:00:00.000000000Z', '2017-05-01T00:00:00.000000000Z']
         # grid_search_res = load_gridsearch(grid_pickle)
         model = Pipeline([('scale',StandardScaler()), ('clf', LogisticRegression(penalty='l2', C=1))])
         results_df = pd.DataFrame([])
@@ -783,6 +786,8 @@ if __name__ == '__main__':
 
     #dump_big_gridsearch()
 
+    live_predict_website()
+
     # prediction_dfs = all_steps_for_models_cross_val()
     # for_mods_plot_roc_returns(prediction_dfs)
 
@@ -797,9 +802,9 @@ if __name__ == '__main__':
     # x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
     # # print(x.shape, y.shape)
 
-    live_trade_one_gran()
+    #live_trade_one_gran()
     #live_predict_website()
-    # x, y, lr, model_lr = all_steps_simple_feature_importance()
+    #x, y, chi_feat_imp, f_cl_k_feat_imp, mut_i_c_feat_imp, lr, model_lr, lsvc, model_lsvc, gbc, model_gbc, gbc_feat_imp, rfc = all_steps_simple_feature_importance()
 
 
     #prediction_df_nn, prediction_df_xg = all_steps_gran_cross_val()

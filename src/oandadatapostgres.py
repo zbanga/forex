@@ -161,8 +161,7 @@ def get_data_continuous_multiple_grans():
                 if can['complete'] == True and time_in_table(table_names[i], can['time']) == False:
                     data.append((can['time'], can['volume'], can['mid']['c'], can['mid']['h'], can['mid']['l'], can['mid']['o'], can['complete']))
             data_to_table(table_names[i], data)
-            print('added to {}: {}'.format(table_names[i], data))
-            data = []
+            print('table {}: added len data: {}'.format(table_names[i], len(data)))
         time.sleep(1)
 
 def return_data_table(table_name):
@@ -225,12 +224,12 @@ if __name__ == '__main__':
     # data = return_data_table('eur_usd_d')
     # df = clean_data(data)
 
-    #get_data_continuous_multiple_time_stamps()
+    get_data_continuous_multiple_grans()
     #
-    gran = 'M15'
-    print(gran)
-    add_table('EUR_USD_'+gran)
-    get_data(instru='EUR_USD', gran=gran)
+    # gran = 'M15'
+    # print(gran)
+    # add_table('EUR_USD_'+gran)
+    # get_data(instru='EUR_USD', gran=gran)
 
 
 
