@@ -49,18 +49,6 @@ from oandadatapostgres import *
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 16})
 
-'''
-todo
-
-live trade with api
-clean up and refactor all code
-
-
-what is the state of the art?
-what are the technical indicators?
-why scaling?
-why log returns?
-'''
 
 def get_data(file_name, date_start, date_end):
     '''
@@ -306,9 +294,9 @@ def get_variety_pipes():
     # lr_ss_scale = Pipeline([('scale',StandardScaler()), ('pca', PCA(.99)), ('clf', gb)])
     # classifiers = [lr, gb, ml]
     pipes = {
-    'lr_l2_c1': lr_l2_c1,
-    'lr_l2_c10': lr_l2_c10,
-    'lr_l2_c01': lr_l2_c01
+    'lr_l2_c1': lr_l2_c1
+    # 'lr_l2_c10': lr_l2_c10,
+    # 'lr_l2_c01': lr_l2_c01
     }
     # for clf in classifiers:
     #     pipes[clf.__class__.__name__] = Pipeline([('scale',MinMaxScaler(feature_range=(0.00001, 1))), ('clf', clf)])
@@ -786,10 +774,10 @@ if __name__ == '__main__':
 
     #dump_big_gridsearch()
 
-    live_predict_website()
+    #live_predict_website()
 
-    # prediction_dfs = all_steps_for_models_cross_val()
-    # for_mods_plot_roc_returns(prediction_dfs)
+    prediction_dfs = all_steps_for_models_cross_val()
+    for_mods_plot_roc_returns(prediction_dfs)
 
 
     # df = get_data('EUR_USD_M15', datetime(2017,9,1), datetime(2018,6,1))

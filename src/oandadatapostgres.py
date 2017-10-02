@@ -112,7 +112,7 @@ def get_data(instru, gran, last_timestamp = '2000-01-01T00:00:00.000000000Z'):
     table_name = instru.lower()+'_'+gran.lower()
     while not hit_today:
         params = {'price': 'M', 'granularity': gran,
-                  'count': 5000,
+                  'count': 5,
                   'from': last_timestamp,
                   'includeFirst': False,
                   'alignmentTimezone': 'America/New_York'}

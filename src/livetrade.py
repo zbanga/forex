@@ -25,14 +25,6 @@ from sqlalchemy import create_engine
 plt.style.use('ggplot')
 plt.rcParams.update({'font.size': 16})
 
-'''
-try with instrument candles added to database
-
-also try resample with pandas and price stream heartbeat
-
-https://pandas.pydata.org/pandas-docs/stable/generated/pandas.DataFrame.resample.html
-
-'''
 
 def time_in_table(table_name, time_stamp):
     '''
@@ -279,7 +271,7 @@ def trade():
         model = pickle.load(open('../picklehistory/live_lr_eur_usd_m15_model.pkl', 'rb'))
         last_timestamp = get_last_timestamp(table_name)
         params = {'price': 'M', 'granularity': 'M15',
-                  'count': 5,
+                  'count': 5000,
                   'from': last_timestamp,
                   'includeFirst': False,
                   'alignmentTimezone': 'America/New_York'}
@@ -321,7 +313,7 @@ def trade():
                 order["order"]["units"] = order_units
                 r = orders.OrderCreate(accountID, data=order)
                 client.request(r)
-                print('y_pred == 1, units ==0\n', r.response)
+                print('y_pred == 1, units == 0\n', r.response)
             elif y_pred == 0 and units == 0:
                 '''
                 sell 1000
@@ -330,7 +322,7 @@ def trade():
                 order["order"]["units"] = order_units
                 r = orders.OrderCreate(accountID, data=order)
                 client.request(r)
-                print('y_pred == 0, units ==0\n', r.response)
+                print('y_pred == 0, units == 0\n', r.response)
             elif y_pred == 1 and units < 0:
                 '''
                 buy 2000
@@ -353,10 +345,12 @@ def trade():
                 '''
                 wait
                 '''
+                print('y_pred == 1, units > 0')
             elif y_pred == 0 and units < 0:
                 '''
                 wait
                 '''
+                print('y_pred == 0, units < 0')
         time.sleep(30)
 
 
