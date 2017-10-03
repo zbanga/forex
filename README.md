@@ -13,8 +13,9 @@ LINK TO PREDICTION WEBSITE
 3. [Features](#features)
 4. [Modeling](#modeling)
 5. [Results](#results)
-6. [Web Application](#web-application)
-7. [Resources](#resources)
+6. [Paper Trading](#paper-trading)
+7. [Web Application](#web-application)
+8. [Resources](#resources)
 
 # Data
 
@@ -329,17 +330,20 @@ Scaling the Features, No PCA, No Feature Selection, and Logistic Regression with
 ![alttext](/imgs/xg_gran_auc.png "XGBoost ROC")
 ![alttext](/imgs/xg_gran_returns.png "XGBoost Returns")
 
-Future Opportunities: Stack classification and regression models. Tune a trading strategy based upon probabilities. Use a proper backtesting library incorporating bid / ask spreads, trading fees. Paper Trade.
+Future Opportunities: Stack classification and regression models. Tune a trading strategy based upon probabilities. Use a proper backtesting library incorporating bid / ask spreads, trading fees.
+
+# Paper Trading
+
+Currently the Logistic Regression model is being Paper Traded with the 15 Minute bars. The script is running on a free AWS EC2 instance with a PostgreSQL database to store the historical candles.
 
 # Web Application
 
-Continuously update SQL database with live candles.
-Continuously fit gridsearched models and predict the future direction for each candle granularity and save predictions.
-Display the best features for predicting each candle.
-Display results in table with fancy tradingview widgets below.
+The web app has a script that continuously updates the SQL database with new candles for each granularity. A model and predict the future direction for each candle granularity and save predictions. Display the best features for predicting each candle. Display from papertrading.
 
-LINK TO WEBSITE HERE
+![alttext](/imgs/webapp.png "Web App")
 
+
+![alttext](/imgs/tradinglog.png "Trading Log")
 
 # Resources
 

@@ -263,14 +263,49 @@ def fit_models():
         model.fit(x, y)
         pickle.dump(model, open('../picklehistory/live_lr_eur_usd_m15_model.pkl', 'wb'))
 
+def streamer_ohlcv():
+    '''
+    {'type': 'PRICE',
+     'time': '2017-10-02T18:02:44.860705391Z',
+     'bids': [{'price': '1.17376', 'liquidity': 10000000}],
+     'asks': [{'price': '1.17386', 'liquidity': 10000000}],
+     'closeoutBid': '1.17361', 'closeoutAsk': '1.17401',
+     'status': 'tradeable',
+     'tradeable': True,
+     'instrument': 'EUR_USD'}
+    '''
+    client = API(access_token=access_token, environment="practice")
+    s = PricingStream(accountID=accountID, params={"instruments":instruments})
+    instruments = "EUR_USD"
+    tick=0
+    df = pd.DataFrame([])
+    df_ohlc = pd.DataFrame()
+    df_volume = pd.DataFrame()
+    df_cat = pd.DataFrame
+    try:
+        for data in api.request(s):
+            if data['type'] == 'PRICE':
+                tick+=1
+                print(tick)
+                df_ohlc_shape = df_ohlc.shape
+                df = df.append(pd.DataFrame({'price': (float(data['bids'][0]['price']) + float(data['asks'][0]['price']))/2, 'volume': 1}, index=pd.to_datetime([data['time']])))
+                df_ohlc = df['price'].resample('1T').ohlc()
+                df_volume = df['volume'].resample('1T').sum()
+                df_cat = pd.concat([df_ohlc, df_volume], axis=1)
+                if df_ohlc.shape != df_ohlc_shape:
+                    print(df_cat)
+    except V20Error as e:
+        print(e)
+
 def trade():
     client = oandapyV20.API(access_token=access_token)
     table_name = 'eur_usd_m15'
+    # model = pickle.load(open('../picklehistory/live_lr_eur_usd_m15_model.pkl', 'rb'))
+    model = Pipeline([('scale',StandardScaler()), ('clf', LogisticRegression(penalty='l2', C=1))])
     count = 0
     while True:
         count+=1
         print('iter {}'.format(count))
-        model = pickle.load(open('../picklehistory/live_lr_eur_usd_m15_model.pkl', 'rb'))
         last_timestamp = get_last_timestamp(table_name)
         params = {'price': 'M', 'granularity': 'M15',
                   'count': 5000,
@@ -288,13 +323,14 @@ def trade():
             start = time.time()
             data_to_table(table_name, candle)
             print('added {} candles'.format(len(candle)))
-            last_month = int(candle[0][0][5:7])-1
-            last_month_timestamp = candle[0][0][:5]+str(last_month).zfill(2)+candle[0][0][7:]
-            data = return_data_table_gt_time(table_name, last_month_timestamp)
+            # last_month = int(candle[0][0][5:7])-1
+            # last_month_timestamp = candle[0][0][:5]+str(last_month).zfill(2)+candle[0][0][7:]
+            data = return_data_table_gt_time(table_name, '2008-01-01T00:00:00.000000000Z')
             df = clean_data(data)
             df = add_target(df)
             df = add_features(df)
             x, y, last_x_pred, last_x_ohlcv = split_data_x_y(df)
+            model.fit(x, y)
             print('df shape: {} x shape: {} y shape {}'.format(df.shape, x.shape, y.shape))
             print('last x with {}'.format(last_x_ohlcv))
             y_pred = model.predict(last_x_pred)
